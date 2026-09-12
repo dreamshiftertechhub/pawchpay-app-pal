@@ -14,13 +14,150 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      login_codes: {
+        Row: {
+          code: string
+          consumed: boolean
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          consumed?: boolean
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          account_number: string
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          account_number: string
+          created_at?: string
+          full_name?: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          account_number?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          direction: string
+          id: string
+          kind: string
+          note: string | null
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category?: string
+          created_at?: string
+          direction: string
+          id?: string
+          kind: string
+          note?: string | null
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          direction?: string
+          id?: string
+          kind?: string
+          note?: string | null
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      issue_login_code: { Args: never; Returns: string }
+      verify_login_code: { Args: { p_code: string }; Returns: boolean }
+      wallet_credit: {
+        Args: {
+          p_amount: number
+          p_category: string
+          p_kind: string
+          p_note?: string
+          p_title: string
+        }
+        Returns: number
+      }
+      wallet_debit: {
+        Args: {
+          p_amount: number
+          p_category: string
+          p_kind: string
+          p_note?: string
+          p_title: string
+        }
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never
