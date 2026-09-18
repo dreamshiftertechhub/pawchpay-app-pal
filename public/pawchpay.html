@@ -375,6 +375,14 @@
   .virtual-card{background:var(--mint)}.segmented .seg.active,.pill.active{background:var(--ink);color:var(--surface)}
   .screen{visibility:hidden;transition:none;transform:none}.screen.active{visibility:visible;animation:screenIn .2s ease both}@keyframes screenIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
   .secure-sheet{padding-top:22px}.secure-sheet .secure-mark{margin-bottom:10px}.secure-sheet>h2{margin-bottom:4px}.secure-sheet>p{margin-bottom:14px}.secure-sheet .receipt{margin-bottom:14px}.secure-sheet .pin-help{margin-bottom:14px!important}
+  .splash-logo{background:transparent;box-shadow:none;width:140px;height:140px;padding:0;border-radius:0;transform:none}
+  .splash-logo img{width:100%;height:100%;object-fit:contain;border-radius:22px}
+  .see-more-link{display:flex;align-items:center;justify-content:center;gap:6px;padding:16px 0 8px;color:var(--mint-deep);font-weight:700;font-size:13.5px;cursor:pointer}
+  .loan-chips{display:flex;gap:10px;overflow-x:auto;padding:2px 22px 14px;scrollbar-width:none}
+  .loan-chips::-webkit-scrollbar{display:none}
+  .loan-chip{flex:0 0 auto;min-width:120px;padding:14px 16px;border-radius:16px;background:var(--mint-tint);border:1px solid var(--line);text-align:left;cursor:pointer}
+  .loan-chip b{display:block;font-size:13.5px;color:var(--ink);margin-bottom:2px}
+  .loan-chip span{font-size:11.5px;color:var(--muted)}
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
@@ -500,6 +508,13 @@
           <span style="font-size:12px; color:var(--mint-deep);">Low-interest PawchLoan, no paperwork</span>
         </div>
         <div class="chev" onclick="go('loan')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
+      </div>
+
+      <div class="section-head" style="margin-top:22px;"><h3>Loans</h3><span onclick="go('loan')">See more</span></div>
+      <div class="loan-chips">
+        <div class="loan-chip" onclick="go('loan')"><b>PawchLoan</b><span>Up to ₦500k</span></div>
+        <div class="loan-chip" onclick="go('loan')"><b>Salary Advance</b><span>Quick cash</span></div>
+        <div class="loan-chip" onclick="go('loan')"><b>Business Loan</b><span>Grow your hustle</span></div>
       </div>
 
       <div class="section-head"><h3>Recent transactions</h3><span onclick="go('history')">See all</span></div>
@@ -631,8 +646,9 @@
         <div class="biller-card" onclick="openResult(true,'Internet plan purchased','30GB monthly plan activated.')"><div class="biller-logo" style="background:#DFF0FB;color:#0B7CC4;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5a11 11 0 0114 0M8.5 16a6 6 0 017 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg></div><b>Internet</b><span>Spectranet, Smile</span></div>
         <div class="biller-card" onclick="openResult(true,'Water bill paid','Lagos Water Corp receipt sent to email.')"><div class="biller-logo" style="background:#E3FBF2;color:#00875A;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2s7 8 7 13a7 7 0 01-14 0c0-5 7-13 7-13z"/></svg></div><b>Water</b><span>State utility boards</span></div>
         <div class="biller-card" onclick="openResult(true,'Tuition payment sent','Reference PWX-88213 generated.')"><div class="biller-logo" style="background:#FBEAEA;color:#C43D3D;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></div><b>Education</b><span>School fees &amp; WAEC</span></div>
-        <div class="biller-card" onclick="go('moreBillers')"><div class="biller-logo" style="background:#EEF1F0;color:#3A3A3A;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg></div><b>More</b><span>Government, insurance</span></div>
+        <div class="biller-card" onclick="go('moreBillers')"><div class="biller-logo" style="background:#EEF1F0;color:#3A3A3A;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div><b>See more</b><span>Government, insurance</span></div>
       </div>
+      <div class="see-more-link" onclick="go('moreBillers')">See more billers <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
     </div>
   </div>
 
@@ -1001,7 +1017,7 @@
     <div class="sheet recipient-sheet">
       <div class="sheet-head"><div><h2>Add new recipient</h2><p>Enter the recipient’s account details.</p></div><button class="modal-close" onclick="closeModal('newRecipientModal')" aria-label="Close">×</button></div>
       <div class="field"><label>Account number</label><input id="newRecipientAccount" type="text" inputmode="numeric" maxlength="10" placeholder="10-digit account number"></div>
-      <div class="field"><label>Bank</label><select id="newRecipientBank"><option value="">Select bank</option><option>PawchPay</option><option>Access Bank</option><option>First Bank</option><option>GTBank</option><option>UBA</option><option>Zenith Bank</option></select></div>
+      <div class="field"><label>Bank</label><select id="newRecipientBank"><option value="">Select bank</option><option>PawchPay</option><option>Access Bank</option><option>Access Bank (Diamond)</option><option>Carbon</option><option>CitiBank</option><option>Ecobank</option><option>FairMoney</option><option>Fidelity Bank</option><option>First Bank of Nigeria</option><option>First City Monument Bank (FCMB)</option><option>Globus Bank</option><option>Guaranty Trust Bank (GTBank)</option><option>Heritage Bank</option><option>Jaiz Bank</option><option>Keystone Bank</option><option>Kuda Bank</option><option>Opay</option><option>Palmpay</option><option>Parallex Bank</option><option>Polaris Bank</option><option>Providus Bank</option><option>Stanbic IBTC</option><option>Standard Chartered</option><option>Sterling Bank</option><option>SunTrust Bank</option><option>Titan Trust Bank</option><option>Union Bank</option><option>United Bank for Africa (UBA)</option><option>Unity Bank</option><option>VFD Bank</option><option>Wema Bank</option><option>Zenith Bank</option></select></div>
       <div class="field"><label>Recipient name</label><input id="newRecipientName" type="text" placeholder="Full name"></div>
       <button class="btn btn-primary" onclick="saveNewRecipient()">Add recipient</button>
     </div>
