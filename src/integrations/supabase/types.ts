@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      beneficiaries: {
+        Row: {
+          account_number: string
+          bank_code: string
+          bank_name: string
+          created_at: string
+          id: string
+          name: string
+          recipient_code: string | null
+          user_id: string
+        }
+        Insert: {
+          account_number: string
+          bank_code: string
+          bank_name: string
+          created_at?: string
+          id?: string
+          name: string
+          recipient_code?: string | null
+          user_id: string
+        }
+        Update: {
+          account_number?: string
+          bank_code?: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          name?: string
+          recipient_code?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       login_codes: {
         Row: {
           code: string
@@ -41,6 +74,72 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_intents: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          provider: string
+          provider_data: Json
+          reference: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          provider?: string
+          provider_data?: Json
+          reference: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          provider?: string
+          provider_data?: Json
+          reference?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      paystack_events: {
+        Row: {
+          event_key: string
+          event_type: string
+          id: string
+          payload: Json
+          processed_at: string
+          reference: string | null
+        }
+        Insert: {
+          event_key: string
+          event_type: string
+          id?: string
+          payload: Json
+          processed_at?: string
+          reference?: string | null
+        }
+        Update: {
+          event_key?: string
+          event_type?: string
+          id?: string
+          payload?: Json
+          processed_at?: string
+          reference?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           account_number: string
@@ -65,6 +164,98 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      savings_contributions: {
+        Row: {
+          amount: number
+          created_at: string
+          goal_id: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          goal_id: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          goal_id?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_contributions_goal_id_fkey"
+            columns: ["goal_id"]
+            isOneToOne: false
+            referencedRelation: "savings_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      savings_goals: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          saved_amount: number
+          status: string
+          target_amount: number
+          target_date: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          saved_amount?: number
+          status?: string
+          target_amount: number
+          target_date?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          saved_amount?: number
+          status?: string
+          target_amount?: number
+          target_date?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      transaction_security: {
+        Row: {
+          failed_attempts: number
+          locked_until: string | null
+          pin_hash: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          failed_attempts?: number
+          locked_until?: string | null
+          pin_hash: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          failed_attempts?: number
+          locked_until?: string | null
+          pin_hash?: string
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -107,6 +298,57 @@ export type Database = {
         }
         Relationships: []
       }
+      transfer_requests: {
+        Row: {
+          account_number: string
+          amount: number
+          bank_code: string
+          bank_name: string
+          created_at: string
+          id: string
+          note: string | null
+          provider_transfer_code: string | null
+          recipient_name: string
+          reference: string
+          reversed_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_number: string
+          amount: number
+          bank_code: string
+          bank_name: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          provider_transfer_code?: string | null
+          recipient_name: string
+          reference: string
+          reversed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_number?: string
+          amount?: number
+          bank_code?: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          provider_transfer_code?: string | null
+          recipient_name?: string
+          reference?: string
+          reversed_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       wallets: {
         Row: {
           balance: number
@@ -136,8 +378,41 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_funding_by_reference: {
+        Args: { p_amount: number; p_reference: string }
+        Returns: boolean
+      }
+      fund_savings_goal_for_user: {
+        Args: { p_amount: number; p_goal_id: string; p_user_id: string }
+        Returns: number
+      }
       issue_login_code: { Args: never; Returns: string }
+      reserve_transfer_for_user: {
+        Args: {
+          p_account_number: string
+          p_amount: number
+          p_bank_code: string
+          p_bank_name: string
+          p_note?: string
+          p_recipient_name: string
+          p_reference: string
+          p_user_id: string
+        }
+        Returns: number
+      }
+      reverse_transfer_by_reference: {
+        Args: { p_reason?: string; p_reference: string }
+        Returns: undefined
+      }
+      set_transaction_pin_for_user: {
+        Args: { p_pin: string; p_user_id: string }
+        Returns: undefined
+      }
       verify_login_code: { Args: { p_code: string }; Returns: boolean }
+      verify_transaction_pin_for_user: {
+        Args: { p_pin: string; p_user_id: string }
+        Returns: boolean
+      }
       wallet_credit: {
         Args: {
           p_amount: number
