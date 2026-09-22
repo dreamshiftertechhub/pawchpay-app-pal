@@ -378,6 +378,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      complete_transfer_by_reference: {
+        Args: { p_provider_transfer_code?: string; p_reference: string }
+        Returns: undefined
+      }
       confirm_funding_by_reference: {
         Args: { p_amount: number; p_reference: string }
         Returns: boolean
@@ -387,6 +391,15 @@ export type Database = {
         Returns: number
       }
       issue_login_code: { Args: never; Returns: string }
+      purchase_airtime_for_user: {
+        Args: {
+          p_amount: number
+          p_network: string
+          p_phone: string
+          p_user_id: string
+        }
+        Returns: number
+      }
       reserve_transfer_for_user: {
         Args: {
           p_account_number: string
