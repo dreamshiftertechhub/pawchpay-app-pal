@@ -8,6 +8,13 @@
       "when": 1789992238534,
       "tag": "0000_secure_payments_and_target_savings",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790076106141,
+      "tag": "0001_complete_transaction_operations",
+      "breakpoints": true
     }
   ]
 }
