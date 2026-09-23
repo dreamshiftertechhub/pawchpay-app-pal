@@ -383,35 +383,51 @@
   .loan-chip{flex:0 0 auto;min-width:120px;padding:14px 16px;border-radius:16px;background:var(--mint-tint);border:1px solid var(--line);text-align:left;cursor:pointer}
   .loan-chip b{display:block;font-size:13.5px;color:var(--ink);margin-bottom:2px}
   .loan-chip span{font-size:11.5px;color:var(--muted)}
+  /* ---------- Final splash and app-frame polish ---------- */
+  .statusbar,.notch{display:none!important}
+  .screen>.topbar{padding-top:18px}
+  #profile .profile-head{padding-top:28px}
+  #splash.screen.dark{
+    background:#07110F;
+    color:var(--surface);
+  }
+  #splash::before{
+    content:'';position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(0,175,160,.055),transparent 34%,rgba(0,175,160,.035));
+  }
+  #splash .splash-art{position:absolute;inset:0;overflow:hidden;z-index:0}
+  #splash .splash-art span{position:absolute;left:50%;top:50%;width:min(84vw,390px);aspect-ratio:1;transform:translate(-50%,-56%);border:1px solid rgba(78,225,204,.1);border-radius:50%;box-shadow:0 0 80px rgba(0,175,160,.06),inset 0 0 80px rgba(0,175,160,.025)}
+  #splash .splash-content{position:relative;z-index:1;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px 48px}
+  #splash .splash-logo{width:min(92%,390px);height:auto;aspect-ratio:1376/768;display:block;filter:drop-shadow(0 22px 38px rgba(0,0,0,.38));animation:logoReveal .8s cubic-bezier(.2,.8,.2,1) both}
+  #splash .splash-logo img{display:block;width:100%;height:100%;object-fit:contain;border-radius:0}
+  #splash .splash-tagline{margin:-9% 0 0;color:#A8BBB6;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.18em}
+  #splash .splash-foot{position:relative;z-index:1;width:100%;padding:0 42px 38px;text-align:center}
+  #splash .splash-foot p{font-size:11.5px;color:#71847F;margin:12px 0 0}
+  #splash .splash-progress{height:3px;background:#162522;border-radius:99px;overflow:hidden}
+  #splash .splash-progress span{display:block;width:38%;height:100%;background:var(--mint);border-radius:inherit;animation:splashLoad 1.55s ease-in-out infinite alternate}
+  @keyframes logoReveal{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
 
 <div class="device" id="device">
-  <div class="notch"></div>
 
   <!-- ================= 1. SPLASH ================= -->
   <div class="screen dark active" id="splash" onclick="go('login')">
-    <div class="statusbar on-dark"><span>9:41</span><span>●●●● &nbsp;⌁&nbsp; ▰</span></div>
-    <div class="splash-art" aria-hidden="true">
-      <span class="orbit orbit-one"></span><span class="orbit orbit-two"></span>
-      <span class="spark spark-one"></span><span class="spark spark-two"></span>
-    </div>
+    <div class="splash-art" aria-hidden="true"><span></span></div>
     <div class="splash-content">
-      <div class="splash-logo"><img src="/__l5e/assets-v1/489e09fc-f4ce-4ab5-b72b-a67ca9eed74e/pawchpay-logo.jpg" alt="PawchPay"></div>
-      <h1>PawchPay</h1>
-      <p>Money moves better here.</p>
+      <div class="splash-logo"><img src="/__l5e/assets-v1/82651253-96ba-4d2a-947d-78cc55f23838/pawchpay-logo-transparent.png" alt="PawchPay"></div>
+      <p class="splash-tagline">Simple. Secure. Save.</p>
     </div>
     <div class="splash-foot">
       <div class="splash-progress"><span></span></div>
-      <p>Secure payments. Everyday ease.</p>
+      <p>Protected payments, built around you.</p>
     </div>
   </div>
 
   <!-- ================= 2. LOGIN ================= -->
   <div class="screen" id="login">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="scroll">
       <div class="auth-head">
         <h1>Welcome back to<br>PawchPay</h1>
@@ -446,7 +462,6 @@
 
   <!-- ================= 3. OTP ================= -->
   <div class="screen" id="otp">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('login')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div></div>
     <div class="scroll">
       <div class="auth-head" style="padding-top:10px;">
@@ -471,7 +486,6 @@
 
   <!-- ================= 4. DASHBOARD ================= -->
   <div class="screen" id="dashboard">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="scroll" style="padding-bottom:96px;">
       <div class="greet-row">
         <div class="avatar" id="dashAvatar">PP</div>
@@ -531,7 +545,6 @@
 
   <!-- ================= SEND MONEY ================= -->
   <div class="screen" id="sendMoney">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('dashboard')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Send Money</h3></div>
     <div class="scroll">
       <div class="px" style="margin-top:4px; position:relative;">
@@ -589,7 +602,6 @@
 
   <!-- ================= FUND WALLET ================= -->
   <div class="screen" id="fundWallet">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('dashboard')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Fund Wallet</h3></div>
     <div class="scroll">
       <div class="keypad-preview px" style="margin-top:22px;"><span class="cur">₦</span><input type="text" id="fundAmount" inputmode="numeric" placeholder="0" oninput="formatAmt(this)"></div>
@@ -607,7 +619,6 @@
 
   <!-- ================= AIRTIME ================= -->
   <div class="screen" id="airtime">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('dashboard')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Airtime &amp; Data</h3></div>
     <div class="scroll">
       <div class="segmented"><div class="seg active" onclick="segSwitch(this)">Airtime</div><div class="seg" onclick="segSwitch(this)">Data</div></div>
@@ -637,7 +648,6 @@
 
   <!-- ================= BILLS ================= -->
   <div class="screen" id="bills">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('dashboard')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Pay Bills</h3></div>
     <div class="scroll">
       <div class="biller-grid" style="margin-top:8px;">
@@ -654,7 +664,6 @@
 
   <!-- ================= MORE BILLERS ================= -->
   <div class="screen" id="moreBillers">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('bills')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>More billers</h3></div>
     <div class="scroll">
       <div class="list-row" onclick="openResult(true,'Tax payment successful','FIRS receipt PWX-77410 sent to your email.')"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div><div class="body"><b>Tax (FIRS/State IRS)</b><span>Pay personal or company tax</span></div><div class="chev"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div></div>
@@ -667,7 +676,6 @@
 
   <!-- ================= LOAN ================= -->
   <div class="screen" id="loan">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('dashboard')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>PawchLoan</h3></div>
     <div class="scroll">
       <div class="wallet-card" style="margin-top:6px;">
@@ -702,7 +710,6 @@
 
   <!-- ================= HISTORY ================= -->
   <div class="screen" id="history">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="scroll" style="padding-bottom:96px;">
       <div class="topbar" style="padding-top:10px;"><h3 style="font-size:20px;">Transactions</h3><div class="iconbtn" style="margin-left:auto;" onclick="toast('Filter options')"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg></div></div>
       <div class="pill-row"><div class="pill active">All</div><div class="pill">Money in</div><div class="pill">Money out</div><div class="pill">Bills</div><div class="pill">Pending</div></div>
@@ -721,7 +728,6 @@
 
   <!-- ================= CARDS ================= -->
   <div class="screen" id="cards">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="scroll" style="padding-bottom:96px;">
       <div class="topbar" style="padding-top:10px;"><h3 style="font-size:20px;">Cards</h3></div>
       <div class="virtual-card">
@@ -755,7 +761,6 @@
   <!-- ================= PROFILE ================= -->
   <div class="screen" id="profile">
     <div class="scroll" style="padding-bottom:96px;">
-      <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
       <div class="profile-head">
         <div class="profile-avatar" id="profileAvatar">PP</div>
         <h3 style="margin:0; font-size:18px;" id="profileName">PawchPay user</h3>
@@ -788,7 +793,6 @@
 
   <!-- ================= EDIT PROFILE ================= -->
   <div class="screen" id="editProfile">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Edit Profile</h3></div>
     <div class="scroll">
       <div class="profile-head" style="padding-top:10px;">
@@ -808,7 +812,6 @@
 
   <!-- ================= SETTINGS ================= -->
   <div class="screen" id="settings">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Settings</h3></div>
     <div class="scroll">
       <div class="section-head" style="margin-top:6px;"><h3>Security</h3><span></span></div>
@@ -836,7 +839,6 @@
 
   <!-- ================= SUPPORT ================= -->
   <div class="screen" id="support">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Help &amp; Support</h3></div>
     <div class="scroll">
       <div class="px" style="margin-top:6px;">
@@ -854,7 +856,6 @@
 
   <!-- ================= NOTIFICATIONS ================= -->
   <div class="screen" id="notifications">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('dashboard')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Notifications</h3></div>
     <div class="scroll">
       <div class="list-row"><div class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6FCBA5" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="body"><b>Money received</b><span>₦45,000 from Grace Okon · 2m ago</span></div></div>
@@ -866,7 +867,6 @@
 
   <!-- ================= SIGN UP ================= -->
   <div class="screen" id="signUp">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('login')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div></div>
     <div class="scroll">
       <div class="auth-head" style="padding-top:6px;">
@@ -886,7 +886,6 @@
 
   <!-- ================= SPEND LIMIT ================= -->
   <div class="screen" id="spendLimit">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('cards')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Spend Limit</h3></div>
     <div class="scroll">
       <p class="hint" style="padding-top:6px;">Set a daily maximum for card transactions. You can change this anytime.</p>
@@ -906,7 +905,6 @@
 
   <!-- ================= IDENTITY VERIFICATION ================= -->
   <div class="screen" id="identityVerification">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Identity Verification</h3></div>
     <div class="scroll">
       <div class="card" style="margin:6px 22px; display:flex; align-items:center; gap:14px; background:var(--mint-tint); border:none;">
@@ -922,7 +920,6 @@
 
   <!-- ================= REFER & EARN ================= -->
   <div class="screen" id="referEarn">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Refer &amp; Earn</h3></div>
     <div class="scroll">
       <div class="wallet-card" style="margin-top:6px; text-align:center;">
@@ -945,7 +942,6 @@
 
   <!-- ================= CHANGE PIN ================= -->
   <div class="screen" id="changePin">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('settings')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div></div>
     <div class="scroll">
       <div class="auth-head" style="padding-top:6px;">
@@ -966,7 +962,6 @@
 
   <!-- ================= TERMS & PRIVACY ================= -->
   <div class="screen" id="termsPrivacy">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('settings')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Terms &amp; Privacy</h3></div>
     <div class="scroll px" style="padding-top:10px; padding-bottom:30px;">
       <p style="font-size:13px; color:var(--muted); line-height:1.7;">
@@ -983,7 +978,6 @@
 
   <!-- ================= LIVE CHAT ================= -->
   <div class="screen" id="liveChat">
-    <div class="statusbar"><span>9:41</span><span>●●●●  📶  🔋</span></div>
     <div class="topbar"><div class="iconbtn back" onclick="go('support')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Live Chat</h3></div>
     <div class="scroll px" style="padding-top:16px; display:flex; flex-direction:column; gap:12px;" id="chatLog">
       <div style="align-self:flex-start; background:var(--surface); border:1px solid var(--line); padding:12px 15px; border-radius:16px 16px 16px 4px; font-size:13.5px; max-width:80%;">Hi David 👋 I'm Tomi from PawchPay support. How can I help you today?</div>
