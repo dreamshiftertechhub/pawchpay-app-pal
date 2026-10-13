@@ -10,33 +10,90 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicPaystackWebhookRouteImport } from './routes/api/public/paystack-webhook'
+import { Route as ApiWalletPinRouteImport } from './routes/api/wallet/pin'
+import { Route as ApiWalletResolveAccountRouteImport } from './routes/api/wallet/resolve-account'
+import { Route as ApiWalletTransferRouteImport } from './routes/api/wallet/transfer'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicPaystackWebhookRoute =
+  ApiPublicPaystackWebhookRouteImport.update({
+    id: '/api/public/paystack-webhook',
+    path: '/api/public/paystack-webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiWalletPinRoute = ApiWalletPinRouteImport.update({
+  id: '/api/wallet/pin',
+  path: '/api/wallet/pin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWalletResolveAccountRoute = ApiWalletResolveAccountRouteImport.update({
+  id: '/api/wallet/resolve-account',
+  path: '/api/wallet/resolve-account',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiWalletTransferRoute = ApiWalletTransferRouteImport.update({
+  id: '/api/wallet/transfer',
+  path: '/api/wallet/transfer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
+  '/api/wallet/pin': typeof ApiWalletPinRoute
+  '/api/wallet/resolve-account': typeof ApiWalletResolveAccountRoute
+  '/api/wallet/transfer': typeof ApiWalletTransferRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
+  '/api/wallet/pin': typeof ApiWalletPinRoute
+  '/api/wallet/resolve-account': typeof ApiWalletResolveAccountRoute
+  '/api/wallet/transfer': typeof ApiWalletTransferRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/api/public/paystack-webhook': typeof ApiPublicPaystackWebhookRoute
+  '/api/wallet/pin': typeof ApiWalletPinRoute
+  '/api/wallet/resolve-account': typeof ApiWalletResolveAccountRoute
+  '/api/wallet/transfer': typeof ApiWalletTransferRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/api/public/paystack-webhook'
+    | '/api/wallet/pin'
+    | '/api/wallet/resolve-account'
+    | '/api/wallet/transfer'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/api/public/paystack-webhook'
+    | '/api/wallet/pin'
+    | '/api/wallet/resolve-account'
+    | '/api/wallet/transfer'
+  id:
+    | '__root__'
+    | '/'
+    | '/api/public/paystack-webhook'
+    | '/api/wallet/pin'
+    | '/api/wallet/resolve-account'
+    | '/api/wallet/transfer'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ApiPublicPaystackWebhookRoute: typeof ApiPublicPaystackWebhookRoute
+  ApiWalletPinRoute: typeof ApiWalletPinRoute
+  ApiWalletResolveAccountRoute: typeof ApiWalletResolveAccountRoute
+  ApiWalletTransferRoute: typeof ApiWalletTransferRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +105,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/paystack-webhook': {
+      id: '/api/public/paystack-webhook'
+      path: '/api/public/paystack-webhook'
+      fullPath: '/api/public/paystack-webhook'
+      preLoaderRoute: typeof ApiPublicPaystackWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wallet/pin': {
+      id: '/api/wallet/pin'
+      path: '/api/wallet/pin'
+      fullPath: '/api/wallet/pin'
+      preLoaderRoute: typeof ApiWalletPinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wallet/resolve-account': {
+      id: '/api/wallet/resolve-account'
+      path: '/api/wallet/resolve-account'
+      fullPath: '/api/wallet/resolve-account'
+      preLoaderRoute: typeof ApiWalletResolveAccountRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/wallet/transfer': {
+      id: '/api/wallet/transfer'
+      path: '/api/wallet/transfer'
+      fullPath: '/api/wallet/transfer'
+      preLoaderRoute: typeof ApiWalletTransferRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ApiPublicPaystackWebhookRoute: ApiPublicPaystackWebhookRoute,
+  ApiWalletPinRoute: ApiWalletPinRoute,
+  ApiWalletResolveAccountRoute: ApiWalletResolveAccountRoute,
+  ApiWalletTransferRoute: ApiWalletTransferRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
