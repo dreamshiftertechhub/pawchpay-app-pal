@@ -85,7 +85,7 @@ export const Route = createFileRoute("/api/wallet/transfer")({
             p_account_number: t.accountNumber,
             p_bank_code: t.bankCode,
             p_bank_name: t.bankName,
-            p_note: t.note || undefined,
+            ...(t.note ? { p_note: t.note } : {}),
           });
           if (resErr) throw new HttpError(resErr.message.includes("Insufficient") ? 402 : 400, resErr.message);
 

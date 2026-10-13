@@ -35,7 +35,7 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
           if (event === "transfer.success") {
             await db.rpc("complete_transfer_by_reference", {
               p_reference: reference,
-              p_provider_transfer_code: payload.data?.transfer_code ?? undefined,
+              ...(payload.data?.transfer_code ? { p_provider_transfer_code: payload.data.transfer_code } : {}),
             });
           } else if (event === "transfer.failed" || event === "transfer.reversed") {
             await db.rpc("reverse_transfer_by_reference", {
