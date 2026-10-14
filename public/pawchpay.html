@@ -200,6 +200,8 @@
   .status-tag{display:inline-block; margin-top:4px; font-size:10.5px; font-weight:700; padding:3px 8px; border-radius:20px;}
   .status-tag.success{background:var(--mint-tint); color:var(--mint-deep);}
   .status-tag.pending{background:var(--amber-tint); color:var(--amber);}
+  .status-tag.reversed{background:var(--amber-tint); color:var(--amber);}
+  .result-icon.pend{background:var(--amber-tint); color:var(--amber);}
   .status-tag.failed{background:var(--red-tint); color:var(--red);}
 
   /* ---------- Bottom Nav ---------- */
@@ -1235,21 +1237,9 @@ function openConfirm(){
   document.getElementById('confAmount').textContent = '₦' + (document.getElementById('sendAmount').value || '0');
   document.getElementById('confirmModal').classList.add('show');
 }
-function doTransfer(){
-  closeModal('confirmModal');
-  const amt = document.getElementById('confAmount').textContent;
-  const recName = document.getElementById('confRecipient').textContent;
-  setTimeout(()=>{
-    openResult(true, 'Transfer successful', `${amt} was sent to ${recName}.`, ()=>{
-      switchTab('dashboard');
-      clearRecipient();
-      document.getElementById('sendAmount').value='';
-      document.querySelectorAll('#sendMoney .chip').forEach(c=>c.classList.remove('active'));
-    });
-  }, 250);
-}
+function doTransfer(){ /* handled by secure backend script */ }
 function fundVia(method){
-  openResult(true, 'Funding initiated', `Follow the instructions sent for ${method} to complete funding.`, ()=>{ switchTab('dashboard'); });
+  openResult(false, 'Funding coming soon', 'Wallet funding is not available yet. No money was charged.');
 }
 
 // -------- Segmented control (Airtime/Data) --------
@@ -1276,11 +1266,7 @@ function selectAirtimeAmt(el, val){
   }
 }
 function buyAirtime(){
-  const network = document.querySelector('#airtime .pill-row .pill.active')?.textContent || 'MTN';
-  const otherVal = document.getElementById('otherAmtInput').value.replace(/[^0-9]/g,'');
-  const amt = otherVal ? Number(otherVal) : (window.__airtimeAmt || 1000);
-  const phone = document.getElementById('airtimePhone').value.trim() || '0801 234 5678';
-  openResult(true, 'Airtime purchased', `₦${amt.toLocaleString()} ${network} airtime was sent to ${phone}.`, ()=>{ switchTab('dashboard'); });
+  openResult(false, 'Airtime coming soon', 'Airtime purchase is not available yet. No money was charged.');
 }
 
 // -------- Loan --------
@@ -1417,32 +1403,7 @@ function logoutFlow(){
   setTimeout(()=>{ go('login'); document.getElementById('loginPass').value=''; checkLogin(); },400);
 }
 
-// -------- Transaction data (shared) --------
-const TXNS = [
-  {icon:icons.send, name:'Amaka Obi', cat:'Transfer', time:'10:24 AM', amt:'-₦45,000', pos:false, status:'success'},
-  {icon:icons.bolt, name:'Ikeja Electric', cat:'Bills · Electricity', time:'9:02 AM', amt:'-₦5,000', pos:false, status:'success'},
-  {icon:icons.trendUp, name:'Grace Okon', cat:'Money in', time:'8:41 AM', amt:'+₦45,000', pos:true, status:'success'},
-  {icon:icons.airtime, name:'MTN Airtime', cat:'Airtime', time:'Yesterday', amt:'-₦1,000', pos:false, status:'pending'},
-  {icon:icons.tv, name:'DStv Compact', cat:'Bills · Cable', time:'Yesterday', amt:'-₦9,500', pos:false, status:'failed'},
-  {icon:icons.loan, name:'PawchLoan disbursed', cat:'Loan', time:'2 days ago', amt:'+₦80,000', pos:true, status:'success'},
-];
-function renderTx(list, targetId, limit){
-  const el = document.getElementById(targetId);
-  if(!el) return;
-  el.innerHTML = list.slice(0, limit||list.length).map(t=>`
-    <div class="tx-row" onclick="toast('${t.name} · ${t.amt}')">
-      <div class="tx-icon">${t.icon}</div>
-      <div class="tx-mid"><b>${t.name}</b><span>${t.cat} · ${t.time}</span></div>
-      <div class="tx-right">
-        <div class="tx-amt ${t.pos?'pos':''}">${t.amt}</div>
-        <div class="status-tag ${t.status}">${t.status[0].toUpperCase()+t.status.slice(1)}</div>
-      </div>
-    </div>`).join('');
-}
-renderTx(TXNS, 'txListDash', 4);
-renderTx(TXNS.slice(0,3), 'txListFullToday');
-renderTx(TXNS.slice(3), 'txListFullYesterday');
-renderTx(TXNS.filter(t=>t.cat.includes('Loan')||t.cat==='Transfer'), 'txListCards');
+// Transactions are rendered from the database by pawch-backend.js
 </script>
 <script type="module" src="/pawch-backend.js"></script>
 </body>
