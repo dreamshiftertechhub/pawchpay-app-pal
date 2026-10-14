@@ -45,13 +45,20 @@ function txRows(list) {
         <div class="tx-mid"><b>${escapeHtml(t.title)}</b><span>${escapeHtml(t.category)} · ${day}</span></div>
         <div class="tx-right">
           <div class="tx-amt ${pos ? "pos" : ""}">${pos ? "+" : "-"}${money(t.amount)}</div>
-          <div class="status-tag ${t.status}">${t.status[0].toUpperCase() + t.status.slice(1)}</div>
+          ${statusTag(t)}
         </div>
       </div>`;
     })
     .join("");
 }
-const escapeHtml = (s) => String(s ?? "").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+function statusTag(t) {
+  let cls = t.status, label = t.status[0].toUpperCase() + t.status.slice(1);
+  if (t.kind === "transfer" && t.status === "failed") { cls = "reversed"; label = "Reversed"; }
+  if (t.kind === "reversal") label = "Refunded";
+  return `<div class="status-tag ${cls}">${label}</div>`;
+}
+const escapeHtml = (s) =>
+  String(s ?? "").replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&#39;" }[c]));
 
 function setText(id, text) {
   const el = $(id);
@@ -103,6 +110,7 @@ async function refresh() {
   state.wallet = wallet;
   state.txns = txns || [];
   render();
+  loadSecureData();
   return true;
 }
 
@@ -199,90 +207,312 @@ window.copyAcct = function () {
   setTimeout(() => pill.classList.remove("show"), 1400);
 };
 
-// ---------- money movements ----------
+// ---------- secure money movements (server routes; identity from verified session) ----------
 const digits = (v) => Number(String(v || "").replace(/[^0-9]/g, "")) || 0;
 
-async function debit(amount, kind, title, category, note) {
-  const { data, error } = await sb.rpc("wallet_debit", {
-    p_amount: amount,
-    p_kind: kind,
-    p_title: title,
-    p_category: category,
-    p_note: note || null,
+async function api(path, opts = {}) {
+  const { data } = await sb.auth.getSession();
+  const token = data.session?.access_token;
+  if (!token) throw Object.assign(new Error("Please sign in again."), { status: 401 });
+  const res = await fetch(path, {
+    ...opts,
+    headers: { "content-type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers || {}) },
   });
-  await refresh();
-  if (error) throw new Error(error.message.includes("Insufficient") ? "Insufficient balance" : error.message);
-  return data;
-}
-async function credit(amount, kind, title, category, note) {
-  const { data, error } = await sb.rpc("wallet_credit", {
-    p_amount: amount,
-    p_kind: kind,
-    p_title: title,
-    p_category: category,
-    p_note: note || null,
-  });
-  await refresh();
-  if (error) throw new Error(error.message);
-  return data;
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(body.error || "Something went wrong. Please try again."), { status: res.status });
+  return body;
 }
 
-window.doTransfer = async function () {
-  window.closeModal("confirmModal");
-  const amount = digits($("sendAmount").value);
-  const recipient = $("ticketName").textContent;
-  if (!amount) return;
-  try {
-    const bal = await debit(amount, "transfer", recipient, "Transfer", $("sendNote")?.value || null);
-    window.openResult(
-      true,
-      "Transfer successful",
-      `${money(amount)} was sent to ${recipient}. New balance: ${money(bal)}.`,
-      () => {
-        window.switchTab("dashboard");
-        window.clearRecipient();
-        $("sendAmount").value = "";
-        document.querySelectorAll("#sendMoney .chip").forEach((c) => c.classList.remove("active"));
-      },
-    );
-  } catch (e) {
-    window.openResult(false, "Transfer failed", e.message);
-  }
+state.hasPin = null;
+state.banks = [];
+state.beneficiaries = [];
+let chosen = null; // { name, accountNumber, bankCode, bankName }
+let pendingRef = null; // one reference per reviewed transfer → double taps can't send twice
+let sending = false;
+
+async function loadSecureData() {
+  api("/api/wallet/pin").then((r) => (state.hasPin = !!r.hasPin)).catch(() => {});
+  sb.from("beneficiaries")
+    .select("id,name,account_number,bank_code,bank_name")
+    .order("created_at", { ascending: false })
+    .then(({ data }) => {
+      state.beneficiaries = data || [];
+      renderBeneficiaries();
+    });
+  if (!state.banks.length)
+    api("/api/wallet/resolve-account")
+      .then((r) => {
+        state.banks = r.banks || [];
+        const sel = $("newRecipientBank");
+        if (sel && state.banks.length)
+          sel.innerHTML =
+            '<option value="">Select bank</option>' +
+            state.banks.map((b) => `<option value="${escapeHtml(b.code)}">${escapeHtml(b.name)}</option>`).join("");
+      })
+      .catch(() => {
+        const sel = $("newRecipientBank");
+        if (sel) sel.innerHTML = '<option value="">Bank list unavailable — try again later</option>';
+      });
+}
+
+function renderBeneficiaries() {
+  const panel = $("contactPanel");
+  if (!panel) return;
+  panel.querySelectorAll(".cp-row").forEach((r) => r.remove());
+  const empty = $("cpEmpty");
+  if (empty) empty.style.display = state.beneficiaries.length ? "none" : "block";
+  state.beneficiaries.forEach((b) => {
+    const row = document.createElement("div");
+    row.className = "cp-row";
+    const sub = `${b.account_number.slice(0, 3)}•••${b.account_number.slice(-4)} · ${b.bank_name}`;
+    row.innerHTML = `<div class="circ">${initials(b.name)}</div><div class="body"><b>${escapeHtml(b.name)}</b><span>${escapeHtml(sub)}</span></div>`;
+    row.onclick = () => pickRecipient({ name: b.name, accountNumber: b.account_number, bankCode: b.bank_code, bankName: b.bank_name });
+    panel.appendChild(row);
+  });
+}
+
+function pickRecipient(r) {
+  chosen = r;
+  pendingRef = null;
+  const sub = `${r.accountNumber.slice(0, 3)}•••${r.accountNumber.slice(-4)} · ${r.bankName}`;
+  window.selectContact(initials(r.name), r.name, sub);
+  setText("ticketFee", "Charged by Paystack");
+}
+
+const origClear = window.clearRecipient;
+window.clearRecipient = function () {
+  chosen = null;
+  pendingRef = null;
+  origClear && origClear();
 };
 
-window.fundVia = async function (method) {
-  const amount = digits($("fundAmount").value);
-  if (!amount) {
-    toast("Enter an amount to add");
+// ----- new recipient: bank + automatic name verification -----
+let verifyTimer = null;
+function resetVerified() {
+  $("newRecipientName").value = "";
+  $("saveRecipientBtn").disabled = true;
+}
+async function verifyRecipientAccount() {
+  const acct = $("newRecipientAccount").value.replace(/\D/g, "");
+  const code = $("newRecipientBank").value;
+  resetVerified();
+  if (acct.length !== 10 || !code) {
+    toast("Enter a 10-digit account number and choose a bank");
     return;
   }
+  const btn = $("verifyAcctBtn");
+  btn.disabled = true;
+  btn.textContent = "Verifying…";
   try {
-    const bal = await credit(amount, "funding", `Wallet top-up · ${method}`, "Money in", method);
-    $("fundAmount").value = "";
-    window.openResult(true, "Wallet funded", `${money(amount)} added via ${method}. New balance: ${money(bal)}.`, () =>
-      window.switchTab("dashboard"),
-    );
+    const r = await api("/api/wallet/resolve-account", { method: "POST", body: JSON.stringify({ accountNumber: acct, bankCode: code }) });
+    $("newRecipientName").value = r.accountName;
+    $("saveRecipientBtn").disabled = false;
   } catch (e) {
-    window.openResult(false, "Funding failed", e.message);
+    toast(e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Verify account name";
+  }
+}
+window.verifyRecipientAccount = verifyRecipientAccount;
+const autoVerify = () => {
+  resetVerified();
+  clearTimeout(verifyTimer);
+  const acct = $("newRecipientAccount").value.replace(/\D/g, "");
+  if (acct.length === 10 && $("newRecipientBank").value) verifyTimer = setTimeout(verifyRecipientAccount, 400);
+};
+$("newRecipientAccount")?.addEventListener("input", autoVerify);
+$("newRecipientBank")?.addEventListener("change", autoVerify);
+
+window.saveNewRecipient = function () {
+  const acct = $("newRecipientAccount").value.replace(/\D/g, "");
+  const sel = $("newRecipientBank");
+  const name = $("newRecipientName").value.trim();
+  if (acct.length !== 10 || !sel.value || !name) {
+    toast("Verify the account name first");
+    return;
+  }
+  window.closeModal("newRecipientModal");
+  pickRecipient({ name, accountNumber: acct, bankCode: sel.value, bankName: sel.options[sel.selectedIndex].text });
+  $("newRecipientAccount").value = "";
+  sel.value = "";
+  resetVerified();
+  toast("Recipient verified — saved after your first transfer");
+};
+
+// ----- review + PIN authorization -----
+window.openConfirm = function () {
+  if (!chosen) return;
+  const amount = digits($("sendAmount").value);
+  if (amount < 100) return toast("Minimum transfer is ₦100");
+  if (state.hasPin === false) {
+    toast("Create your transaction PIN first");
+    window.__pinReturn = "sendMoney";
+    return window.go("changePin");
+  }
+  if (!pendingRef) pendingRef = crypto.randomUUID();
+  setText("confRecipient", chosen.name);
+  setText("confAmount", money(amount));
+  setText("confBank", `${chosen.bankName} · ${chosen.accountNumber}`);
+  setText("pinHelp", "Your PIN is required to approve this payment.");
+  $("transferPin").value = "";
+  $("authorizeBtn").disabled = true;
+  $("confirmModal").classList.add("show");
+};
+
+function showPendingIcon() {
+  const ic = $("resultIcon");
+  ic.className = "result-icon pend";
+  ic.innerHTML =
+    '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>';
+}
+
+function resetSendForm() {
+  window.clearRecipient();
+  $("sendAmount").value = "";
+  if ($("sendNote")) $("sendNote").value = "";
+  document.querySelectorAll("#sendMoney .chip").forEach((c) => c.classList.remove("active"));
+}
+
+async function checkLater(reference, tries = 3) {
+  for (let i = 0; i < tries; i++) {
+    await new Promise((r) => setTimeout(r, 6000));
+    try {
+      const r = await api(`/api/wallet/transfer?reference=${encodeURIComponent(reference)}`);
+      if (r.status !== "pending") {
+        await refresh();
+        toast(r.status === "success" ? "Transfer confirmed by the bank" : "Transfer failed — money returned to your wallet");
+        return;
+      }
+    } catch {}
+  }
+}
+
+window.authorizeTransfer = async function () {
+  if (sending || !chosen) return;
+  const pin = $("transferPin").value;
+  if (!/^\d{4}$/.test(pin)) return toast("Enter your 4-digit PIN");
+  sending = true;
+  $("authorizeBtn").disabled = true;
+  $("authorizeBtn").textContent = "Sending…";
+  const amount = digits($("sendAmount").value);
+  const recipient = chosen;
+  try {
+    const r = await api("/api/wallet/transfer", {
+      method: "POST",
+      body: JSON.stringify({
+        reference: pendingRef,
+        amount,
+        accountNumber: recipient.accountNumber,
+        bankCode: recipient.bankCode,
+        bankName: recipient.bankName,
+        pin,
+        note: $("sendNote")?.value.trim() || null,
+      }),
+    });
+    const ref = pendingRef;
+    pendingRef = null;
+    window.closeModal("confirmModal");
+    await refresh();
+    const to = r.recipientName || recipient.name;
+    if (r.status === "success") {
+      window.openResult(true, "Transfer successful", `${money(amount)} was delivered to ${to}. Confirmed by the bank.`, () => {
+        resetSendForm();
+        window.switchTab("dashboard");
+      });
+    } else if (r.status === "pending") {
+      window.openResult(true, "Transfer pending", `${money(amount)} to ${to} is being processed. It is not complete until the bank confirms; if it fails, the money returns to your wallet automatically.`, () => {
+        resetSendForm();
+        window.switchTab("dashboard");
+      });
+      showPendingIcon();
+      checkLater(ref);
+    } else {
+      window.openResult(false, `Transfer ${r.status}`, "This transfer did not complete. Any held money has been returned to your wallet.");
+    }
+  } catch (e) {
+    if (e.status === 401 && /PIN/i.test(e.message)) {
+      $("transferPin").value = "";
+      setText("pinHelp", e.message);
+    } else if (e.status === 428) {
+      window.closeModal("confirmModal");
+      state.hasPin = false;
+      window.__pinReturn = "sendMoney";
+      toast("Create your transaction PIN first");
+      window.go("changePin");
+    } else {
+      window.closeModal("confirmModal");
+      if (e.status !== 423) pendingRef = null; // nothing was sent; a retry gets a new reference
+      await refresh();
+      window.openResult(false, "Transfer not sent", e.message);
+    }
+  } finally {
+    sending = false;
+    $("authorizeBtn").textContent = "Authorize & Send";
+  }
+};
+window.doTransfer = window.authorizeTransfer;
+
+// ----- transaction PIN: create / change (server-checked) -----
+let pinFlow = { step: null, current: "", first: "" };
+function pinScreen(title, desc) {
+  setText("pinStepTitle", title);
+  setText("pinStepDesc", desc);
+  const boxes = document.querySelectorAll("#changePin .pin-box");
+  boxes.forEach((b) => (b.value = ""));
+  boxes[0]?.focus();
+}
+function pinStart() {
+  pinFlow = { step: state.hasPin ? "current" : "new", current: "", first: "" };
+  if (state.hasPin) pinScreen("Enter current PIN", "Confirm it's you before choosing a new transaction PIN.");
+  else pinScreen("Create your transaction PIN", "Choose a 4-digit PIN. You'll use it to authorize every transfer.");
+}
+const origGo = window.go;
+window.go = function (id, push) {
+  const r = origGo(id, push);
+  if (id === "changePin") pinStart();
+  return r;
+};
+window.pinNext = async function () {
+  const val = Array.from(document.querySelectorAll("#changePin .pin-box")).map((b) => b.value).join("");
+  if (!/^\d{4}$/.test(val)) return toast("Enter all 4 digits");
+  if (pinFlow.step === "current") {
+    pinFlow.current = val;
+    pinFlow.step = "new";
+    return pinScreen("Set new transaction PIN", "Choose a new 4-digit PIN.");
+  }
+  if (pinFlow.step === "new") {
+    pinFlow.first = val;
+    pinFlow.step = "confirm";
+    return pinScreen("Confirm new PIN", "Enter the same 4-digit PIN again to confirm.");
+  }
+  if (val !== pinFlow.first) {
+    toast("PINs don't match — try again");
+    pinFlow.step = "new";
+    return pinScreen("Set new transaction PIN", "Choose a 4-digit PIN.");
+  }
+  try {
+    await api("/api/wallet/pin", {
+      method: "POST",
+      body: JSON.stringify({ pin: val, ...(pinFlow.current ? { currentPin: pinFlow.current } : {}) }),
+    });
+    const created = !state.hasPin;
+    state.hasPin = true;
+    const back = window.__pinReturn || "settings";
+    window.__pinReturn = null;
+    window.openResult(true, created ? "PIN created" : "PIN updated", "Your transaction PIN is now active.", () => origGo(back));
+  } catch (e) {
+    window.openResult(false, "PIN not changed", e.message);
+    pinStart();
   }
 };
 
-window.buyAirtime = async function () {
-  const network = document.querySelector("#airtime .pill-row .pill.active")?.textContent || "MTN";
-  const other = digits($("otherAmtInput").value);
-  const amount = other || window.__airtimeAmt || 1000;
-  const phone = $("airtimePhone").value.trim() || state.profile?.phone || "";
-  try {
-    const bal = await debit(amount, "airtime", `${network} Airtime`, "Airtime", phone);
-    window.openResult(
-      true,
-      "Airtime purchased",
-      `${money(amount)} ${network} airtime sent to ${phone || "your line"}. New balance: ${money(bal)}.`,
-      () => window.switchTab("dashboard"),
-    );
-  } catch (e) {
-    window.openResult(false, "Purchase failed", e.message);
-  }
+// ----- not yet available: no money moves -----
+window.fundVia = function () {
+  window.openResult(false, "Funding coming soon", "Wallet funding is not available yet. No money was charged.");
+};
+window.buyAirtime = function () {
+  window.openResult(false, "Airtime coming soon", "Airtime purchase is not available yet. No money was charged.");
 };
 
 // ---------- boot ----------
