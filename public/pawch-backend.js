@@ -111,6 +111,7 @@ async function refresh() {
   state.txns = txns || [];
   render();
   loadSecureData();
+  loadSavings();
   return true;
 }
 
@@ -178,9 +179,8 @@ window.verifyOtp = async function () {
   }
   boxes.forEach((b) => (b.value = ""));
   await refresh();
-  window.openResult(true, "Verification successful", "Welcome to PawchPay — your dashboard is ready.", () =>
-    window.switchTab("dashboard"),
-  );
+  window.switchTab("dashboard");
+  toast("Welcome to PawchPay");
 };
 
 window.logoutFlow = async function () {
@@ -243,17 +243,27 @@ async function loadSecureData() {
     api("/api/wallet/resolve-account")
       .then((r) => {
         state.banks = r.banks || [];
-        const sel = $("newRecipientBank");
-        if (sel && state.banks.length)
-          sel.innerHTML =
-            '<option value="">Select bank</option>' +
-            state.banks.map((b) => `<option value="${escapeHtml(b.code)}">${escapeHtml(b.name)}</option>`).join("");
+        renderBankOptions();
       })
       .catch(() => {
         const sel = $("newRecipientBank");
         if (sel) sel.innerHTML = '<option value="">Bank list unavailable — try again later</option>';
       });
 }
+
+function renderBankOptions() {
+  const sel = $("newRecipientBank");
+  if (!sel || !state.banks.length) return;
+  const q = ($("bankSearch")?.value || "").trim().toLowerCase();
+  const keep = sel.value;
+  const list = q ? state.banks.filter((b) => b.name.toLowerCase().includes(q)) : state.banks;
+  sel.innerHTML =
+    `<option value="">${list.length ? (q ? `${list.length} bank${list.length > 1 ? "s" : ""} found — select` : "Select bank") : "No bank matches your search"}</option>` +
+    list.map((b) => `<option value="${escapeHtml(b.code)}">${escapeHtml(b.name)}</option>`).join("");
+  if (list.some((b) => b.code === keep)) sel.value = keep;
+  else if (q && list.length === 1) { sel.value = list[0].code; sel.dispatchEvent(new Event("change")); }
+}
+$("bankSearch")?.addEventListener("input", renderBankOptions);
 
 function renderBeneficiaries() {
   const panel = $("contactPanel");
@@ -336,6 +346,7 @@ window.saveNewRecipient = function () {
   pickRecipient({ name, accountNumber: acct, bankCode: sel.value, bankName: sel.options[sel.selectedIndex].text });
   $("newRecipientAccount").value = "";
   sel.value = "";
+  if ($("bankSearch")) { $("bankSearch").value = ""; renderBankOptions(); }
   resetVerified();
   toast("Recipient verified — saved after your first transfer");
 };
@@ -515,10 +526,116 @@ window.buyAirtime = function () {
   window.openResult(false, "Airtime coming soon", "Airtime purchase is not available yet. No money was charged.");
 };
 
+// ---------- target savings ----------
+state.goals = [];
+let activeGoal = null;
+let savingBusy = false;
+async function loadSavings() {
+  try {
+    const r = await api("/api/wallet/savings");
+    state.goals = r.goals || [];
+  } catch { return; }
+  renderSavings();
+}
+function renderSavings() {
+  const total = state.goals.reduce((a, g) => a + Number(g.saved_amount), 0);
+  setText("savingsTotal", money(total));
+  setText("savingsCount", state.goals.length ? `${state.goals.length} active goal${state.goals.length > 1 ? "s" : ""}` : "No goals yet");
+  setText("savingsSummary", state.goals.length ? `${money(total)} saved across ${state.goals.length} goal${state.goals.length > 1 ? "s" : ""}` : "Set a goal and save towards it");
+  const list = $("goalList");
+  if (!list) return;
+  if (!state.goals.length) {
+    list.innerHTML = '<p style="text-align:center;font-size:13px;color:var(--muted);padding:18px 0;">Create your first goal — a laptop, rent or a trip.</p>';
+    return;
+  }
+  list.innerHTML = state.goals.map((g) => {
+    const pct = Math.min(100, Math.round((Number(g.saved_amount) / Number(g.target_amount)) * 100));
+    const done = pct >= 100;
+    const due = g.target_date ? `Due ${new Date(g.target_date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}` : "No deadline";
+    return `<div class="goal"><div class="goal-top"><b>${escapeHtml(g.name)}</b><span>${due}</span></div>
+      <div class="goal-bar"><i style="width:${pct}%"></i></div>
+      <div class="goal-meta"><span>${money(g.saved_amount)} of ${money(g.target_amount)}</span><span>${done ? "Goal reached 🎉" : pct + "%"}</span></div>
+      ${done ? "" : `<button class="btn btn-ghost btn-sm" onclick="openFundGoal('${g.id}')">Add money</button>`}</div>`;
+  }).join("");
+}
+window.openNewGoal = function () {
+  $("goalName").value = ""; $("goalTarget").value = ""; $("goalDate").value = "";
+  $("goalDate").min = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  $("newGoalModal").classList.add("show");
+};
+window.createGoal = async function () {
+  if (savingBusy) return;
+  const name = $("goalName").value.trim();
+  const targetAmount = digits($("goalTarget").value);
+  if (name.length < 2) return toast("Give your goal a name");
+  if (targetAmount < 1000) return toast("Target must be at least ₦1,000");
+  savingBusy = true; $("createGoalBtn").disabled = true;
+  try {
+    await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "create", name, targetAmount, targetDate: $("goalDate").value || null }) });
+    window.closeModal("newGoalModal");
+    await loadSavings();
+    toast("Savings goal created");
+  } catch (e) { toast(e.message); }
+  finally { savingBusy = false; $("createGoalBtn").disabled = false; }
+};
+window.openFundGoal = function (id) {
+  activeGoal = state.goals.find((g) => g.id === id);
+  if (!activeGoal) return;
+  if (state.hasPin === false) { toast("Create your transaction PIN first"); window.__pinReturn = "savings"; return window.go("changePin"); }
+  setText("fundGoalTitle", `Add to ${activeGoal.name}`);
+  setText("fundGoalSub", `Wallet balance: ${money(state.wallet?.balance)}`);
+  $("fundGoalAmount").value = ""; $("fundGoalPin").value = "";
+  $("fundGoalModal").classList.add("show");
+};
+window.fundGoal = async function () {
+  if (savingBusy || !activeGoal) return;
+  const amount = digits($("fundGoalAmount").value);
+  const pin = $("fundGoalPin").value;
+  if (amount < 100) return toast("Minimum is ₦100");
+  if (amount > Number(state.wallet?.balance || 0)) return toast("Insufficient wallet balance");
+  if (!/^\d{4}$/.test(pin)) return toast("Enter your 4-digit PIN");
+  savingBusy = true; $("fundGoalBtn").disabled = true; $("fundGoalBtn").textContent = "Saving…";
+  try {
+    await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "fund", goalId: activeGoal.id, amount, pin }) });
+    window.closeModal("fundGoalModal");
+    await refresh();
+    window.openResult(true, "Money saved", `${money(amount)} moved into ${activeGoal.name}.`);
+  } catch (e) {
+    $("fundGoalPin").value = "";
+    toast(e.message);
+  } finally { savingBusy = false; $("fundGoalBtn").disabled = false; $("fundGoalBtn").textContent = "Save now"; }
+};
+
+// ---------- password show/hide ----------
+const EYE = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const EYE_OFF = '<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22"/><path d="M14.12 14.12a3 3 0 11-4.24-4.24"/></svg>';
+["loginPass", "suPass"].forEach((id) => {
+  const input = $(id);
+  if (!input || input.parentElement.classList.contains("pw-wrap")) return;
+  const wrap = document.createElement("div");
+  wrap.className = "pw-wrap";
+  input.parentNode.insertBefore(wrap, input);
+  wrap.appendChild(input);
+  const btn = document.createElement("button");
+  btn.type = "button"; btn.className = "pw-eye"; btn.setAttribute("aria-label", "Show password"); btn.innerHTML = EYE;
+  btn.onclick = () => {
+    const show = input.type === "password";
+    input.type = show ? "text" : "password";
+    btn.innerHTML = show ? EYE_OFF : EYE;
+    btn.setAttribute("aria-label", show ? "Hide password" : "Show password");
+  };
+  wrap.appendChild(btn);
+});
+
 // ---------- boot ----------
+// Installed app: the phone already shows a launch screen, so skip the in-app splash.
+const installed = window.matchMedia?.("(display-mode: standalone)").matches || window.navigator.standalone === true ||
+  (() => { try { return window.parent !== window && window.parent.matchMedia("(display-mode: standalone)").matches; } catch { return false; } })();
 (async () => {
+  if (installed && $("splash")?.classList.contains("active")) window.go("login", false);
   const signedIn = await refresh();
   if (signedIn) {
+    if (installed) window.switchTab("dashboard");
     const splash = document.getElementById("splash");
     if (splash) splash.setAttribute("onclick", "switchTab('dashboard')");
   }
