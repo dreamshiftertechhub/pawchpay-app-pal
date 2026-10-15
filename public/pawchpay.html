@@ -409,6 +409,9 @@
   #splash .splash-progress span{display:block;width:38%;height:100%;background:var(--mint);border-radius:inherit;animation:splashLoad 1.55s ease-in-out infinite alternate}
   @keyframes logoReveal{from{opacity:0;transform:translateY(10px) scale(.97)}to{opacity:1;transform:none}}
   @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+  .pw-wrap{position:relative}.pw-wrap input{padding-right:48px!important}.pw-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:36px;height:36px;border:none;background:transparent;color:var(--muted);display:grid;place-items:center;cursor:pointer;border-radius:10px}
+  #bankSearch{width:100%;height:48px;border:1.5px solid var(--line);border-radius:14px;padding:0 14px;font:inherit;background:var(--surface)}
+  .goal{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-md);padding:16px;margin-bottom:12px}.goal-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}.goal-top b{font-size:15px}.goal-top span{font-size:12px;color:var(--muted)}.goal-bar{height:8px;border-radius:99px;background:var(--mint-tint);overflow:hidden;margin:12px 0 8px}.goal-bar i{display:block;height:100%;background:var(--mint);border-radius:inherit;transition:width .6s}.goal-meta{display:flex;justify-content:space-between;font-size:12.5px;color:var(--muted)}.goal .btn{margin-top:12px}
 </style>
 </head>
 <body>
@@ -515,6 +518,12 @@
         <div class="quick-item" onclick="go('fundWallet')"><div class="quick-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00875A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div><span>Fund Wallet</span></div>
         <div class="quick-item" onclick="go('airtime')"><div class="quick-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00875A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div><span>Airtime</span></div>
         <div class="quick-item" onclick="go('bills')"><div class="quick-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00875A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2h16v20l-3-2-3 2-3-2-3 2-3-2-1 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="16" y2="11"/></svg></div><span>Bills</span></div>
+      </div>
+
+      <div class="card savings-entry" onclick="go('savings')" style="margin:22px 22px 0; display:flex; align-items:center; gap:14px; cursor:pointer;">
+        <div style="width:44px;height:44px;border-radius:13px;background:var(--amber-tint);display:flex;align-items:center;justify-content:center;color:var(--ink);flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg></div>
+        <div style="flex:1;"><b style="font-size:14.5px;">Target Savings</b><div id="savingsSummary" style="font-size:12.5px;color:var(--muted);margin-top:2px;">Set a goal and save towards it</div></div>
+        <span style="font-size:20px;color:var(--muted);">›</span>
       </div>
 
       <div class="card" style="margin:22px 22px 0; display:flex; align-items:center; gap:14px; background:var(--mint-tint); border:none;">
@@ -1011,10 +1020,45 @@
     <div class="sheet recipient-sheet">
       <div class="sheet-head"><div><h2>Add new recipient</h2><p>Enter the recipient’s account details.</p></div><button class="modal-close" onclick="closeModal('newRecipientModal')" aria-label="Close">×</button></div>
       <div class="field"><label>Account number</label><input id="newRecipientAccount" type="text" inputmode="numeric" maxlength="10" placeholder="10-digit account number"></div>
-      <div class="field"><label>Bank</label><select id="newRecipientBank"><option value="">Select bank</option><option>Access Bank</option><option>Access Bank (Diamond)</option><option>Carbon</option><option>CitiBank</option><option>Ecobank</option><option>FairMoney</option><option>Fidelity Bank</option><option>First Bank of Nigeria</option><option>First City Monument Bank (FCMB)</option><option>Globus Bank</option><option>Guaranty Trust Bank (GTBank)</option><option>Heritage Bank</option><option>Jaiz Bank</option><option>Keystone Bank</option><option>Kuda Bank</option><option>Opay</option><option>Palmpay</option><option>Parallex Bank</option><option>Polaris Bank</option><option>Providus Bank</option><option>Stanbic IBTC</option><option>Standard Chartered</option><option>Sterling Bank</option><option>SunTrust Bank</option><option>Titan Trust Bank</option><option>Union Bank</option><option>United Bank for Africa (UBA)</option><option>Unity Bank</option><option>VFD Bank</option><option>Wema Bank</option><option>Zenith Bank</option></select></div>
+      <div class="field"><label>Bank</label><input id="bankSearch" type="search" placeholder="Search bank (e.g. Opay, GTBank)" autocomplete="off" style="margin-bottom:8px"><select id="newRecipientBank" size="1"><option value="">Select bank</option><option>Access Bank</option><option>Access Bank (Diamond)</option><option>Carbon</option><option>CitiBank</option><option>Ecobank</option><option>FairMoney</option><option>Fidelity Bank</option><option>First Bank of Nigeria</option><option>First City Monument Bank (FCMB)</option><option>Globus Bank</option><option>Guaranty Trust Bank (GTBank)</option><option>Heritage Bank</option><option>Jaiz Bank</option><option>Keystone Bank</option><option>Kuda Bank</option><option>Opay</option><option>Palmpay</option><option>Parallex Bank</option><option>Polaris Bank</option><option>Providus Bank</option><option>Stanbic IBTC</option><option>Standard Chartered</option><option>Sterling Bank</option><option>SunTrust Bank</option><option>Titan Trust Bank</option><option>Union Bank</option><option>United Bank for Africa (UBA)</option><option>Unity Bank</option><option>VFD Bank</option><option>Wema Bank</option><option>Zenith Bank</option></select></div>
       <div class="field"><label>Recipient name</label><input id="newRecipientName" type="text" placeholder="Verified automatically" readonly></div>
       <button class="btn btn-outline" id="verifyAcctBtn" type="button" onclick="verifyRecipientAccount()" style="margin-bottom:10px;">Verify account name</button>
       <button class="btn btn-primary" id="saveRecipientBtn" disabled onclick="saveNewRecipient()">Add recipient</button>
+    </div>
+  </div>
+
+  <!-- ================= TARGET SAVINGS ================= -->
+  <div class="screen" id="savings">
+    <div class="topbar"><div class="iconbtn back" onclick="switchTab('dashboard')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Target Savings</h3></div>
+    <div class="scroll">
+      <div class="px">
+        <div class="card" style="background:var(--ink);color:#fff;border:none;padding:20px;">
+          <span style="font-size:12.5px;opacity:.75;">Total saved</span>
+          <div id="savingsTotal" style="font:700 28px 'Outfit',sans-serif;margin:4px 0 2px;">₦0.00</div>
+          <span id="savingsCount" style="font-size:12.5px;opacity:.75;">No goals yet</span>
+        </div>
+        <button class="btn btn-primary" style="margin:16px 0 18px;" onclick="openNewGoal()">+ Create a savings goal</button>
+        <div id="goalList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="newGoalModal">
+    <div class="sheet">
+      <div class="sheet-head"><div><h2>New savings goal</h2><p>Name it, set a target and save at your pace.</p></div><button class="modal-close" onclick="closeModal('newGoalModal')" aria-label="Close">×</button></div>
+      <div class="field"><label>Goal name</label><input id="goalName" type="text" maxlength="40" placeholder="e.g. New laptop, Rent, Holiday"></div>
+      <div class="field"><label>Target amount (₦)</label><input id="goalTarget" type="text" inputmode="numeric" placeholder="100,000" oninput="formatAmt(this)"></div>
+      <div class="field"><label>Target date (optional)</label><input id="goalDate" type="date"></div>
+      <button class="btn btn-primary" id="createGoalBtn" onclick="createGoal()">Create goal</button>
+    </div>
+  </div>
+
+  <div class="modal-layer" id="fundGoalModal">
+    <div class="sheet">
+      <div class="sheet-head"><div><h2 id="fundGoalTitle">Add to goal</h2><p id="fundGoalSub">Money moves from your wallet into this goal.</p></div><button class="modal-close" onclick="closeModal('fundGoalModal')" aria-label="Close">×</button></div>
+      <div class="field"><label>Amount (₦)</label><input id="fundGoalAmount" type="text" inputmode="numeric" placeholder="5,000" oninput="formatAmt(this)"></div>
+      <div class="field"><label>Transaction PIN</label><input id="fundGoalPin" type="password" inputmode="numeric" maxlength="4" placeholder="••••"></div>
+      <button class="btn btn-primary" id="fundGoalBtn" onclick="fundGoal()">Save now</button>
     </div>
   </div>
 
