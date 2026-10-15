@@ -67,12 +67,7 @@ export const Route = createFileRoute("/api/wallet/savings")({
             p_user_id: userId,
             p_pin: p.data.pin,
           });
-          if (pinErr) {
-            const m = pinErr.message || "";
-            if (/lock/i.test(m)) throw new HttpError(423, "PIN locked after too many attempts. Try again in 15 minutes.");
-            if (/not set|no pin/i.test(m)) throw new HttpError(428, "Create your transaction PIN first.");
-            throw pinErr;
-          }
+          if (pinErr) throw new HttpError(pinErr.message.includes("not been set") ? 428 : 423, pinErr.message);
           if (!pinOk) throw new HttpError(401, "Incorrect PIN.");
           const { error } = await db.rpc("fund_savings_goal_for_user", {
             p_user_id: userId,
