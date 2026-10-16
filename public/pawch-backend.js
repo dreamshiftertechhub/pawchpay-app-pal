@@ -537,30 +537,86 @@ async function loadSavings() {
   } catch { return; }
   renderSavings();
 }
+const GOAL_CATS = { education: ["Education", "🎓"], business: ["Business", "💼"], travel: ["Travel", "✈️"], rent: ["Rent", "🏠"], gadget: ["Gadget", "📱"], emergency: ["Emergency", "🛟"], custom: ["Custom", "⭐"] };
+const CAT_KEY = "pawch_goal_cats";
+function goalCats() { try { return JSON.parse(localStorage.getItem(CAT_KEY) || "{}"); } catch { return {}; } }
+function goalCat(id) { return GOAL_CATS[goalCats()[id]] ? goalCats()[id] : "custom"; }
+let newGoalCat = "custom";
+function goalPct(g) { return Math.min(100, Math.floor((Number(g.saved_amount) / Number(g.target_amount)) * 100)); }
+function fmtDate(d) { return new Date(d).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }); }
+function planFor(remaining, date) {
+  if (!date || remaining <= 0) return null;
+  const days = Math.ceil((new Date(date + "T23:59:59") - Date.now()) / 864e5);
+  if (days <= 0) return null;
+  const weeks = Math.max(1, Math.ceil(days / 7)), months = Math.max(1, Math.ceil(days / 30.44));
+  return { weekly: Math.ceil(remaining / weeks), monthly: Math.ceil(remaining / months), weeks, months };
+}
+function planHtml(p) {
+  return `<div>Suggested: <b>${money(p.weekly)}</b>/week or <b>${money(p.monthly)}</b>/month</div><em>Estimate only — nothing is deducted automatically. You choose when to save.</em>`;
+}
+function msBar(pct) {
+  return `<div class="goal-bar ms-bar" style="overflow:visible"><i style="width:${pct}%"></i>${[25, 50, 75].map((m) => `<span class="ms ${pct >= m ? "on" : ""}" style="left:${m}%"></span>`).join("")}</div>`;
+}
 function renderSavings() {
   const total = state.goals.reduce((a, g) => a + Number(g.saved_amount), 0);
+  const target = state.goals.reduce((a, g) => a + Number(g.target_amount), 0);
+  const active = state.goals.filter((g) => goalPct(g) < 100).length;
+  const overall = target ? Math.min(100, Math.floor((total / target) * 100)) : 0;
   setText("savingsTotal", money(total));
-  setText("savingsCount", state.goals.length ? `${state.goals.length} active goal${state.goals.length > 1 ? "s" : ""}` : "No goals yet");
+  setText("savingsCount", state.goals.length ? `${state.goals.length} goal${state.goals.length > 1 ? "s" : ""}` : "No goals yet");
+  setText("svActive", String(active));
+  setText("svOverallPct", overall + "%");
+  setText("svTargetTotal", money(target).replace(/\.00$/, ""));
+  if ($("svOverallBar")) $("svOverallBar").style.width = overall + "%";
   setText("savingsSummary", state.goals.length ? `${money(total)} saved across ${state.goals.length} goal${state.goals.length > 1 ? "s" : ""}` : "Set a goal and save towards it");
   const list = $("goalList");
   if (!list) return;
   if (!state.goals.length) {
-    list.innerHTML = '<p style="text-align:center;font-size:13px;color:var(--muted);padding:18px 0;">Create your first goal — a laptop, rent or a trip.</p>';
+    list.innerHTML = '<p style="text-align:center;font-size:13px;color:var(--muted);padding:18px 0;">Create your first goal — school fees, rent or a trip.</p>';
     return;
   }
   list.innerHTML = state.goals.map((g) => {
-    const pct = Math.min(100, Math.round((Number(g.saved_amount) / Number(g.target_amount)) * 100));
-    const done = pct >= 100;
-    const due = g.target_date ? `Due ${new Date(g.target_date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}` : "No deadline";
-    return `<div class="goal"><div class="goal-top"><b>${escapeHtml(g.name)}</b><span>${due}</span></div>
-      <div class="goal-bar"><i style="width:${pct}%"></i></div>
-      <div class="goal-meta"><span>${money(g.saved_amount)} of ${money(g.target_amount)}</span><span>${done ? "Goal reached 🎉" : pct + "%"}</span></div>
-      ${done ? "" : `<button class="btn btn-ghost btn-sm" onclick="openFundGoal('${g.id}')">Add money</button>`}</div>`;
+    const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g.id)];
+    const due = g.target_date ? `Due ${fmtDate(g.target_date)}` : cat[0];
+    return `<div class="goal" role="button" tabindex="0" onclick="openGoalDetail('${g.id}')"><div class="goal-head"><div class="goal-ico">${cat[1]}</div><div class="goal-top"><b>${escapeHtml(g.name)}</b><span>${due}</span></div></div>
+      ${msBar(pct)}
+      <div class="goal-meta"><span>${money(g.saved_amount)} of ${money(g.target_amount)}</span><span>${done ? "Goal reached 🎉" : pct + "%"}</span></div></div>`;
   }).join("");
 }
+window.openGoalDetail = function (id) {
+  const g = state.goals.find((x) => x.id === id);
+  if (!g) return;
+  const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g.id)];
+  const remaining = Math.max(0, Number(g.target_amount) - Number(g.saved_amount));
+  const plan = planFor(remaining, g.target_date);
+  setText("gdName", g.name);
+  setText("gdDue", (g.target_date ? `Target date ${fmtDate(g.target_date)}` : "No target date") + " · " + cat[0]);
+  $("gdBody").innerHTML = `<div class="gd-hero"><div class="goal-ico">${cat[1]}</div><div class="gd-pct">${pct}%</div><span style="font-size:12.5px;color:var(--muted)">${done ? "Goal reached — well done" : "completed"}</span></div>
+    ${msBar(pct)}
+    <div class="ms-row">${[25, 50, 75, 100].map((m) => `<div class="${pct >= m ? "on" : ""}"><i>${pct >= m ? "✓" : ""}</i>${m}%</div>`).join("")}</div>
+    <div class="gd-grid"><div><span>Saved</span><b>${money(g.saved_amount)}</b></div><div><span>Remaining</span><b>${money(remaining)}</b></div><div><span>Target</span><b>${money(g.target_amount)}</b></div><div><span>Started</span><b>${fmtDate(g.created_at)}</b></div></div>
+    ${plan ? `<div class="plan-box">${planHtml(plan)}</div>` : ""}
+    ${done ? "" : `<button class="btn btn-primary" onclick="closeModal('goalDetailModal');openFundGoal('${g.id}')">Add money</button>`}`;
+  $("goalDetailModal").classList.add("show");
+};
+window.selectGoalCat = function (key) {
+  newGoalCat = key;
+  document.querySelectorAll("#goalCats .cat-chip").forEach((c) => c.classList.toggle("on", c.dataset.cat === key));
+  const n = $("goalName");
+  if (key !== "custom" && (!n.value.trim() || Object.values(GOAL_CATS).some((c) => c[0] === n.value.trim()))) n.value = GOAL_CATS[key][0];
+};
+window.updatePlanPreview = function () {
+  const box = $("goalPlan"); if (!box) return;
+  const p = planFor(digits($("goalTarget").value), $("goalDate").value);
+  box.style.display = p ? "block" : "none";
+  if (p) box.innerHTML = planHtml(p);
+};
 window.openNewGoal = function () {
   $("goalName").value = ""; $("goalTarget").value = ""; $("goalDate").value = "";
   $("goalDate").min = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  $("goalCats").innerHTML = Object.entries(GOAL_CATS).map(([k, [l, e]]) => `<button type="button" class="cat-chip" data-cat="${k}" onclick="selectGoalCat('${k}')">${e} ${l}</button>`).join("");
+  window.selectGoalCat("custom");
+  window.updatePlanPreview();
   $("newGoalModal").classList.add("show");
 };
 window.createGoal = async function () {
@@ -571,7 +627,8 @@ window.createGoal = async function () {
   if (targetAmount < 1000) return toast("Target must be at least ₦1,000");
   savingBusy = true; $("createGoalBtn").disabled = true;
   try {
-    await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "create", name, targetAmount, targetDate: $("goalDate").value || null }) });
+    const r = await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "create", name, targetAmount, targetDate: $("goalDate").value || null }) });
+    if (r && r.id) { const m = goalCats(); m[r.id] = newGoalCat; localStorage.setItem(CAT_KEY, JSON.stringify(m)); }
     window.closeModal("newGoalModal");
     await loadSavings();
     toast("Savings goal created");
