@@ -62,11 +62,26 @@ export const Route = createFileRoute("/api/wallet/savings")({
                 name: p.data.name,
                 target_amount: p.data.targetAmount,
                 target_date: p.data.targetDate || null,
+                category: p.data.category || "custom",
               })
               .select("id")
               .single();
             if (error) throw error;
             return json({ id: data.id });
+          }
+          if (raw?.action === "setCategory") {
+            const p = SetCategory.safeParse(raw);
+            if (!p.success) throw new HttpError(400, "Unknown category.");
+            // Only fills in goals still on the default, so one device never
+            // overwrites a category another device already chose.
+            const { error } = await db
+              .from("savings_goals")
+              .update({ category: p.data.category })
+              .eq("id", p.data.goalId)
+              .eq("user_id", userId)
+              .eq("category", "custom");
+            if (error) throw error;
+            return json({ ok: true });
           }
           const p = Fund.safeParse(raw);
           if (!p.success) throw new HttpError(400, "Enter an amount of at least ₦100 and your 4-digit PIN.");
