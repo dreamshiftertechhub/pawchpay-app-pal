@@ -534,6 +534,7 @@ async function loadSavings() {
   try {
     const r = await api("/api/wallet/savings");
     state.goals = r.goals || [];
+    await syncGoalCats();
   } catch { return; }
   renderSavings();
 }
@@ -640,8 +641,7 @@ window.createGoal = async function () {
   if (targetAmount < 1000) return toast("Target must be at least ₦1,000");
   savingBusy = true; $("createGoalBtn").disabled = true;
   try {
-    const r = await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "create", name, targetAmount, targetDate: $("goalDate").value || null }) });
-    if (r && r.id) { const m = goalCats(); m[r.id] = newGoalCat; localStorage.setItem(CAT_KEY, JSON.stringify(m)); }
+    const r = await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "create", name, targetAmount, targetDate: $("goalDate").value || null, category: newGoalCat }) });
     window.closeModal("newGoalModal");
     await loadSavings();
     toast("Savings goal created");
