@@ -2,11 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { admin, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
 
+const CATEGORIES = ["education", "business", "travel", "rent", "gadget", "emergency", "custom"] as const;
 const Create = z.object({
   action: z.literal("create"),
   name: z.string().trim().min(2).max(40),
   targetAmount: z.number().int().min(1000).max(100_000_000),
   targetDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  category: z.enum(CATEGORIES).optional(),
+});
+const SetCategory = z.object({
+  action: z.literal("setCategory"),
+  goalId: z.string().uuid(),
+  category: z.enum(CATEGORIES),
 });
 const Fund = z.object({
   action: z.literal("fund"),
@@ -24,7 +31,7 @@ export const Route = createFileRoute("/api/wallet/savings")({
           const db = await admin();
           const { data, error } = await db
             .from("savings_goals")
-            .select("id,name,target_amount,saved_amount,target_date,status,created_at")
+            .select("id,name,target_amount,saved_amount,target_date,status,created_at,category")
             .eq("user_id", userId)
             .order("created_at", { ascending: false });
           if (error) throw error;
