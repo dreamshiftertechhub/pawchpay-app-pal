@@ -210,11 +210,15 @@ window.copyAcct = function () {
 // ---------- secure money movements (server routes; identity from verified session) ----------
 const digits = (v) => Number(String(v || "").replace(/[^0-9]/g, "")) || 0;
 
+// Inside the Android app the screens are packaged locally, so money requests
+// go to the published server over HTTPS. In the browser they stay same-origin.
+const API_BASE = window.Capacitor?.isNativePlatform?.() ? "https://pawchpay-app-pal.lovable.app" : "";
+
 async function api(path, opts = {}) {
   const { data } = await sb.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw Object.assign(new Error("Please sign in again."), { status: 401 });
-  const res = await fetch(path, {
+  const res = await fetch(API_BASE + path, {
     ...opts,
     headers: { "content-type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers || {}) },
   });
