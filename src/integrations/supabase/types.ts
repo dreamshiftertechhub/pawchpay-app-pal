@@ -201,6 +201,7 @@ export type Database = {
       }
       savings_goals: {
         Row: {
+          category: string
           created_at: string
           id: string
           name: string
@@ -212,6 +213,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          category?: string
           created_at?: string
           id?: string
           name: string
@@ -223,6 +225,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          category?: string
           created_at?: string
           id?: string
           name?: string

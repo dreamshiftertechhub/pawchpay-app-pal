@@ -210,11 +210,15 @@ window.copyAcct = function () {
 // ---------- secure money movements (server routes; identity from verified session) ----------
 const digits = (v) => Number(String(v || "").replace(/[^0-9]/g, "")) || 0;
 
+// Inside the Android app the screens are packaged locally, so money requests
+// go to the published server over HTTPS. In the browser they stay same-origin.
+const API_BASE = window.Capacitor?.isNativePlatform?.() ? "https://pawchpay-app-pal.lovable.app" : "";
+
 async function api(path, opts = {}) {
   const { data } = await sb.auth.getSession();
   const token = data.session?.access_token;
   if (!token) throw Object.assign(new Error("Please sign in again."), { status: 401 });
-  const res = await fetch(path, {
+  const res = await fetch(API_BASE + path, {
     ...opts,
     headers: { "content-type": "application/json", Authorization: `Bearer ${token}`, ...(opts.headers || {}) },
   });
@@ -534,13 +538,27 @@ async function loadSavings() {
   try {
     const r = await api("/api/wallet/savings");
     state.goals = r.goals || [];
+    await syncGoalCats();
   } catch { return; }
   renderSavings();
 }
 const GOAL_CATS = { education: ["Education", "🎓"], business: ["Business", "💼"], travel: ["Travel", "✈️"], rent: ["Rent", "🏠"], gadget: ["Gadget", "📱"], emergency: ["Emergency", "🛟"], custom: ["Custom", "⭐"] };
 const CAT_KEY = "pawch_goal_cats";
 function goalCats() { try { return JSON.parse(localStorage.getItem(CAT_KEY) || "{}"); } catch { return {}; } }
-function goalCat(id) { return GOAL_CATS[goalCats()[id]] ? goalCats()[id] : "custom"; }
+function goalCat(g) { return GOAL_CATS[g?.category] ? g.category : "custom"; }
+// One-time backfill: goals saved before categories lived in the database get
+// the category this device remembers, but only if the goal is still on the
+// default — a category chosen on another device is never overwritten.
+async function syncGoalCats() {
+  const local = goalCats();
+  const pending = state.goals.filter((g) => g.category === "custom" && local[g.id] && local[g.id] !== "custom" && GOAL_CATS[local[g.id]]);
+  for (const g of pending) {
+    try {
+      await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "setCategory", goalId: g.id, category: local[g.id] }) });
+      g.category = local[g.id];
+    } catch { /* keep default */ }
+  }
+}
 let newGoalCat = "custom";
 function goalPct(g) { return Math.min(100, Math.floor((Number(g.saved_amount) / Number(g.target_amount)) * 100)); }
 function fmtDate(d) { return new Date(d).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }); }
@@ -576,7 +594,7 @@ function renderSavings() {
     return;
   }
   list.innerHTML = state.goals.map((g) => {
-    const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g.id)];
+    const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g)];
     const due = g.target_date ? `Due ${fmtDate(g.target_date)}` : cat[0];
     return `<div class="goal" role="button" tabindex="0" onclick="openGoalDetail('${g.id}')"><div class="goal-head"><div class="goal-ico">${cat[1]}</div><div class="goal-top"><b>${escapeHtml(g.name)}</b><span>${due}</span></div></div>
       ${msBar(pct)}
@@ -586,7 +604,7 @@ function renderSavings() {
 window.openGoalDetail = function (id) {
   const g = state.goals.find((x) => x.id === id);
   if (!g) return;
-  const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g.id)];
+  const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g)];
   const remaining = Math.max(0, Number(g.target_amount) - Number(g.saved_amount));
   const plan = planFor(remaining, g.target_date);
   setText("gdName", g.name);
@@ -627,8 +645,7 @@ window.createGoal = async function () {
   if (targetAmount < 1000) return toast("Target must be at least ₦1,000");
   savingBusy = true; $("createGoalBtn").disabled = true;
   try {
-    const r = await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "create", name, targetAmount, targetDate: $("goalDate").value || null }) });
-    if (r && r.id) { const m = goalCats(); m[r.id] = newGoalCat; localStorage.setItem(CAT_KEY, JSON.stringify(m)); }
+    const r = await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "create", name, targetAmount, targetDate: $("goalDate").value || null, category: newGoalCat }) });
     window.closeModal("newGoalModal");
     await loadSavings();
     toast("Savings goal created");

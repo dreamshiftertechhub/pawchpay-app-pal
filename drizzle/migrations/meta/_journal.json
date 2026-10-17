@@ -15,6 +15,13 @@
       "when": 1790076106141,
       "tag": "0001_complete_transaction_operations",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792236247892,
+      "tag": "0002_add_savings_goal_category",
+      "breakpoints": true
     }
   ]
 }

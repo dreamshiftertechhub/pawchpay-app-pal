@@ -9,17 +9,37 @@ export class HttpError extends Error {
   }
 }
 
-export const json = (body: unknown, status = 200) =>
+// The packaged Android/iOS app loads its screens locally and calls these
+// routes cross-origin from capacitor://localhost (Android) or
+// capacitor://localhost / https://localhost (iOS). Only those app origins get
+// CORS headers; browser traffic stays same-origin and needs none.
+const APP_ORIGINS = new Set(["capacitor://localhost", "https://localhost", "http://localhost"]);
+
+export function corsHeaders(request: Request): Record<string, string> {
+  const origin = request.headers.get("origin") || "";
+  if (!APP_ORIGINS.has(origin)) return {};
+  return {
+    "access-control-allow-origin": origin,
+    "access-control-allow-methods": "GET, POST, OPTIONS",
+    "access-control-allow-headers": "authorization, content-type",
+    vary: "origin",
+  };
+}
+
+export const json = (body: unknown, status = 200, request?: Request) =>
   new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json", "cache-control": "no-store" },
+    headers: { "content-type": "application/json", "cache-control": "no-store", ...(request ? corsHeaders(request) : {}) },
   });
 
-export function errorResponse(e: unknown) {
-  if (e instanceof HttpError) return json({ error: e.message }, e.status);
+export function errorResponse(e: unknown, request?: Request) {
+  if (e instanceof HttpError) return json({ error: e.message }, e.status, request);
   console.error("[wallet]", e);
-  return json({ error: "Something went wrong. Please try again." }, 500);
+  return json({ error: "Something went wrong. Please try again." }, 500, request);
 }
+
+export const corsPreflightResponse = (request: Request) =>
+  new Response(null, { status: 204, headers: corsHeaders(request) });
 
 /** Verifies the bearer token with the auth service and returns the user id. Never trusts client-supplied ids. */
 export async function requireUser(request: Request): Promise<string> {
