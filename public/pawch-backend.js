@@ -590,7 +590,7 @@ function renderSavings() {
     return;
   }
   list.innerHTML = state.goals.map((g) => {
-    const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g.id)];
+    const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g)];
     const due = g.target_date ? `Due ${fmtDate(g.target_date)}` : cat[0];
     return `<div class="goal" role="button" tabindex="0" onclick="openGoalDetail('${g.id}')"><div class="goal-head"><div class="goal-ico">${cat[1]}</div><div class="goal-top"><b>${escapeHtml(g.name)}</b><span>${due}</span></div></div>
       ${msBar(pct)}
@@ -600,7 +600,7 @@ function renderSavings() {
 window.openGoalDetail = function (id) {
   const g = state.goals.find((x) => x.id === id);
   if (!g) return;
-  const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g.id)];
+  const pct = goalPct(g), done = pct >= 100, cat = GOAL_CATS[goalCat(g)];
   const remaining = Math.max(0, Number(g.target_amount) - Number(g.saved_amount));
   const plan = planFor(remaining, g.target_date);
   setText("gdName", g.name);
