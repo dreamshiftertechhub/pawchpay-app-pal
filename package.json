@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "build:mobile": "node scripts/build-mobile.mjs && cap sync android",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
