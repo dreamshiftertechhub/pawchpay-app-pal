@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { admin, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
+import { admin, corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
 
 const CATEGORIES = ["education", "business", "travel", "rent", "gadget", "emergency", "custom"] as const;
 const Create = z.object({

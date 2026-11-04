@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
+import { corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
 import { listBanks, resolveAccount } from "@/lib/paystack.server";
 
 const Body = z.object({ accountNumber: z.string().regex(/^\d{10}$/), bankCode: z.string().regex(/^[0-9A-Za-z]{2,10}$/) });

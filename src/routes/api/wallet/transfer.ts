@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { admin, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
+import { admin, corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
 import { createRecipient, initiateTransfer, PaystackRejected, resolveAccount, verifyTransfer } from "@/lib/paystack.server";
 
 const MIN = 100;
