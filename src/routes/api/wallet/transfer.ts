@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { admin, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
+import { admin, corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
 import { createRecipient, initiateTransfer, PaystackRejected, resolveAccount, verifyTransfer } from "@/lib/paystack.server";
 
 const MIN = 100;
@@ -39,6 +39,7 @@ async function currentStatus(db: Db, userId: string, reference: string) {
 export const Route = createFileRoute("/api/wallet/transfer")({
   server: {
     handlers: {
+      OPTIONS: async ({ request }) => corsPreflightResponse(request),
       // Status check: reconciles a pending transfer with Paystack.
       GET: async ({ request }) => {
         try {
@@ -49,9 +50,9 @@ export const Route = createFileRoute("/api/wallet/transfer")({
           const row = await currentStatus(db, userId, reference);
           if (!row) throw new HttpError(404, "Transfer not found.");
           if (row.status === "pending") await reconcile(db, reference);
-          return json(await currentStatus(db, userId, reference));
+          return json(await currentStatus(db, userId, reference), 200, request);
         } catch (e) {
-          return errorResponse(e);
+          return errorResponse(e, request);
         }
       },
       POST: async ({ request }) => {
@@ -67,7 +68,7 @@ export const Route = createFileRoute("/api/wallet/transfer")({
           const { data: existing } = await db.from("transfer_requests").select("user_id, status").eq("reference", t.reference).maybeSingle();
           if (existing) {
             if (existing.user_id !== userId) throw new HttpError(409, "Duplicate reference.");
-            return json({ status: existing.status, reference: t.reference, duplicate: true });
+            return json({ status: existing.status, reference: t.reference, duplicate: true }, 200, request);
           }
 
           const { data: pinOk, error: pinErr } = await db.rpc("verify_transaction_pin_for_user", { p_user_id: userId, p_pin: t.pin });
@@ -112,14 +113,14 @@ export const Route = createFileRoute("/api/wallet/transfer")({
             const tr = await initiateTransfer({ amountNaira: t.amount, recipient, reference: t.reference, reason: t.note || "PawchPay transfer" });
             if (tr.status === "success") {
               await db.rpc("complete_transfer_by_reference", { p_reference: t.reference, p_provider_transfer_code: tr.transfer_code });
-              return json({ status: "success", reference: t.reference, recipientName: accountName });
+              return json({ status: "success", reference: t.reference, recipientName: accountName }, 200, request);
             }
             if (tr.status === "otp") {
               await db.rpc("reverse_transfer_by_reference", { p_reference: t.reference, p_reason: "Provider requires OTP" });
               throw new HttpError(503, "Transfers are temporarily unavailable. Your money has been returned to your wallet.");
             }
             await db.from("transfer_requests").update({ provider_transfer_code: tr.transfer_code }).eq("reference", t.reference);
-            return json({ status: "pending", reference: t.reference, recipientName: accountName });
+            return json({ status: "pending", reference: t.reference, recipientName: accountName }, 200, request);
           } catch (e) {
             if (e instanceof PaystackRejected) {
               console.error("[transfer rejected]", t.reference, e.message);
@@ -129,10 +130,10 @@ export const Route = createFileRoute("/api/wallet/transfer")({
             if (e instanceof HttpError) throw e;
             // Unknown outcome (network): keep pending; webhook or status check will settle it.
             console.error("[transfer unknown]", t.reference, e);
-            return json({ status: "pending", reference: t.reference, recipientName: accountName });
+            return json({ status: "pending", reference: t.reference, recipientName: accountName }, 200, request);
           }
         } catch (e) {
-          return errorResponse(e);
+          return errorResponse(e, request);
         }
       },
     },

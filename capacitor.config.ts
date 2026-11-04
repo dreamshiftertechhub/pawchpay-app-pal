@@ -7,6 +7,13 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
   },
+  // Sends every fetch through the native HTTP stack instead of the WebView,
+  // so calls to the hosted server are not blocked by cross-origin rules.
+  plugins: {
+    CapacitorHttp: {
+      enabled: true,
+    },
+  },
 };
 
 export default config;

@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { admin, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
+import { admin, corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
 
 const Body = z.object({
   pin: z.string().regex(/^\d{4}$/),
@@ -16,12 +16,13 @@ async function hasPin(userId: string) {
 export const Route = createFileRoute("/api/wallet/pin")({
   server: {
     handlers: {
+      OPTIONS: async ({ request }) => corsPreflightResponse(request),
       GET: async ({ request }) => {
         try {
           const userId = await requireUser(request);
-          return json({ hasPin: await hasPin(userId) });
+          return json({ hasPin: await hasPin(userId) }, 200, request);
         } catch (e) {
-          return errorResponse(e);
+          return errorResponse(e, request);
         }
       },
       POST: async ({ request }) => {
@@ -41,9 +42,9 @@ export const Route = createFileRoute("/api/wallet/pin")({
           }
           const { error } = await db.rpc("set_transaction_pin_for_user", { p_user_id: userId, p_pin: parsed.data.pin });
           if (error) throw new HttpError(400, error.message);
-          return json({ ok: true });
+          return json({ ok: true }, 200, request);
         } catch (e) {
-          return errorResponse(e);
+          return errorResponse(e, request);
         }
       },
     },

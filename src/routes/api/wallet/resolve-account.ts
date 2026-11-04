@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
+import { corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
 import { listBanks, resolveAccount } from "@/lib/paystack.server";
 
 const Body = z.object({ accountNumber: z.string().regex(/^\d{10}$/), bankCode: z.string().regex(/^[0-9A-Za-z]{2,10}$/) });
@@ -8,12 +8,13 @@ const Body = z.object({ accountNumber: z.string().regex(/^\d{10}$/), bankCode: z
 export const Route = createFileRoute("/api/wallet/resolve-account")({
   server: {
     handlers: {
+      OPTIONS: async ({ request }) => corsPreflightResponse(request),
       GET: async ({ request }) => {
         try {
           await requireUser(request);
-          return json({ banks: await listBanks() });
+          return json({ banks: await listBanks() }, 200, request);
         } catch (e) {
-          return errorResponse(e);
+          return errorResponse(e, request);
         }
       },
       POST: async ({ request }) => {
@@ -22,9 +23,9 @@ export const Route = createFileRoute("/api/wallet/resolve-account")({
           const parsed = Body.safeParse(await request.json().catch(() => null));
           if (!parsed.success) throw new HttpError(400, "Enter a 10-digit account number and choose a bank.");
           const name = await resolveAccount(parsed.data.accountNumber, parsed.data.bankCode);
-          return json({ accountName: name });
+          return json({ accountName: name }, 200, request);
         } catch (e) {
-          return errorResponse(e);
+          return errorResponse(e, request);
         }
       },
     },
