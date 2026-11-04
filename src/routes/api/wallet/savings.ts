@@ -35,9 +35,9 @@ export const Route = createFileRoute("/api/wallet/savings")({
             .eq("user_id", userId)
             .order("created_at", { ascending: false });
           if (error) throw error;
-          return json({ goals: data });
+          return json({ goals: data }, 200, request);
         } catch (e) {
-          return errorResponse(e);
+          return errorResponse(e, request);
         }
       },
       POST: async ({ request }) => {
@@ -67,7 +67,7 @@ export const Route = createFileRoute("/api/wallet/savings")({
               .select("id")
               .single();
             if (error) throw error;
-            return json({ id: data.id });
+            return json({ id: data.id }, 200, request);
           }
           if (raw?.action === "setCategory") {
             const p = SetCategory.safeParse(raw);
@@ -81,7 +81,7 @@ export const Route = createFileRoute("/api/wallet/savings")({
               .eq("user_id", userId)
               .eq("category", "custom");
             if (error) throw error;
-            return json({ ok: true });
+            return json({ ok: true }, 200, request);
           }
           const p = Fund.safeParse(raw);
           if (!p.success) throw new HttpError(400, "Enter an amount of at least ₦100 and your 4-digit PIN.");
@@ -103,7 +103,7 @@ export const Route = createFileRoute("/api/wallet/savings")({
           }
           return json({ ok: true });
         } catch (e) {
-          return errorResponse(e);
+          return errorResponse(e, request);
         }
       },
     },
