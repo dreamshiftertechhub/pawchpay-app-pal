@@ -1,6 +1,4 @@
-# Builds the PawchPay Android debug APK for internal testing.
-# Run it from the GitHub Actions tab ("Build Android APK" -> Run workflow),
-# then download the apk artifact and install it on a phone.
+
 name: Build Android APK
 
 on:
@@ -11,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -22,13 +21,16 @@ jobs:
       - name: Package mobile client and sync into the Android project
         run: bun run build:mobile
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
 
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          accept-android-sdk-licenses: true
+          packages: platform-tools platforms;android-36 build-tools;36.0.0
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon
