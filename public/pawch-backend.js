@@ -129,16 +129,18 @@ window.doLogin = async function () {
   const email = $("loginInput").value.trim();
   const pass = $("loginPass").value;
   const btn = $("loginBtn");
-  btn.disabled = true;
-  const { error } = await sb.auth.signInWithPassword({ email, password: pass });
-  btn.disabled = false;
-  if (error) {
-    window.openResult(false, "Login failed", error.message);
-    return;
+  if (btn) btn.disabled = true;
+  try {
+    const { error } = await sb.auth.signInWithPassword({ email, password: pass });
+    if (error) throw error;
+    await refresh();
+    window.switchTab("dashboard");
+    toast("Welcome to PawchPay");
+  } catch (error) {
+    window.openResult(false, "Login could not be completed", error.message || "Please try again.");
+  } finally {
+    if (btn) btn.disabled = false;
   }
-  await refresh();
-  window.switchTab("dashboard");
-  toast("Welcome to PawchPay");
 };
 
 window.doSignUp = async function () {
