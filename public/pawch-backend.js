@@ -497,9 +497,30 @@ window.pinNext = async function () {
   }
 };
 
-// ----- not yet available: no money moves -----
-window.fundVia = function () {
-  window.openResult(false, "Funding coming soon", "Wallet funding is not available yet. No money was charged.");
+// ----- wallet funding: Paystack checkout; wallet credit only after verified webhook -----
+let fundingBusy = false;
+window.fundVia = async function (method) {
+  if (fundingBusy) return;
+  const amount = digits($("fundAmount")?.value);
+  if (amount < 100 || amount > 1_000_000) {
+    toast("Enter an amount between ₦100 and ₦1,000,000");
+    return;
+  }
+  fundingBusy = true;
+  try {
+    const result = await api("/api/wallet/funding", {
+      method: "POST",
+      body: JSON.stringify({ amount }),
+    });
+    if (!result.authorizationUrl) throw new Error("Payment checkout could not be opened.");
+    // Paystack chooses the available payment channels at checkout. Never
+    // credit the wallet from this browser redirect; the signed webhook does that.
+    window.location.assign(result.authorizationUrl);
+  } catch (e) {
+    window.openResult(false, "Could not start funding", e.message);
+  } finally {
+    fundingBusy = false;
+  }
 };
 window.buyAirtime = function () {
   window.openResult(false, "Airtime coming soon", "Airtime purchase is not available yet. No money was charged.");
