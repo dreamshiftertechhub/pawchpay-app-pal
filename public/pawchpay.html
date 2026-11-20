@@ -528,20 +528,9 @@
         <span style="font-size:20px;color:var(--muted);">›</span>
       </div>
 
-      <div class="card" style="margin:22px 22px 0; display:flex; align-items:center; gap:14px; background:var(--mint-tint); border:none;">
-        <div style="width:44px;height:44px;border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--mint-deep);flex-shrink:0;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v12M9 9h4.5a2.5 2.5 0 010 5H9"/></svg></div>
-        <div style="flex:1;">
-          <b style="font-size:14px; display:block;">Get up to ₦500,000 instantly</b>
-          <span style="font-size:12px; color:var(--mint-deep);">Low-interest PawchLoan, no paperwork</span>
-        </div>
-        <div class="chev" onclick="go('loan')"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></div>
-      </div>
-
-      <div class="section-head" style="margin-top:22px;"><h3>Loans</h3><span onclick="go('loan')">See more</span></div>
-      <div class="loan-chips">
-        <div class="loan-chip" onclick="go('loan')"><b>PawchLoan</b><span>Up to ₦500k</span></div>
-        <div class="loan-chip" onclick="go('loan')"><b>Salary Advance</b><span>Quick cash</span></div>
-        <div class="loan-chip" onclick="go('loan')"><b>Business Loan</b><span>Grow your hustle</span></div>
+      <div class="card" style="margin:22px 22px 0;">
+        <b style="font-size:14px;">Loan services are not available yet</b>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:8px 0 0;">PawchPay has not connected a lending provider. No loan eligibility or approval is currently offered.</p>
       </div>
 
       <div class="section-head"><h3>Recent transactions</h3><span onclick="go('history')">See all</span></div>
@@ -686,33 +675,16 @@
   <div class="screen" id="loan">
     <div class="topbar"><div class="iconbtn back" onclick="go('dashboard')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>PawchLoan</h3></div>
     <div class="scroll">
-      <div class="wallet-card" style="margin-top:6px;">
-        <span style="color:#9FB3AC; font-size:12.5px;">You're eligible for</span>
-        <div class="balance">₦500,000</div>
-        <div class="balance-sub"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6FCBA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> 3.5% monthly · repay in 3–12 months</div>
-      </div>
-      <div class="px" style="margin-top:22px;">
-        <label style="font-size:12.5px; font-weight:600; color:var(--muted);">How much do you need?</label>
-      </div>
-      <div class="keypad-preview px"><span class="cur">₦</span><input type="text" id="loanAmount" inputmode="numeric" value="150,000" oninput="formatAmt(this); recalcLoan()"></div>
-      <div class="px">
-        <label style="font-size:12.5px; font-weight:600; color:var(--muted);">Repayment period</label>
-        <div class="pill-row" style="padding:10px 0 4px; margin:0 -22px;">
-          <div class="pill" onclick="selectLoanPeriod(this,3)">3 months</div><div class="pill active" onclick="selectLoanPeriod(this,6)">6 months</div><div class="pill" onclick="selectLoanPeriod(this,12)">12 months</div>
-        </div>
-      </div>
-      <div class="card" style="margin:20px 22px;">
-        <div class="receipt" style="background:transparent; padding:0; margin:0;">
-          <div class="r"><span>Loan amount</span><b id="loanAmountOut">₦150,000</b></div>
-          <div class="r"><span>Interest (3.5%/mo)</span><b id="loanInterestOut">₦31,500</b></div>
-          <div class="r"><span>Monthly repayment</span><b id="loanMonthlyOut">₦30,250</b></div>
-        </div>
-      </div>
-      <div class="px">
-        <button class="btn btn-primary" onclick="applyLoan()">Apply Now</button>
+      <div class="card" style="margin:18px 22px;">
+        <b style="font-size:15px;">PawchLoan is not available yet</b>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;margin:8px 0 0;">Loan applications, eligibility checks, interest rates and repayments are not connected to a lending provider. No loan offer is being made and no application can be submitted.</p>
       </div>
       <div class="section-head"><h3>Loan history</h3><span></span></div>
-      <div class="card" style="margin:6px 22px;"><b style="font-size:14px;">No loan history available</b><p style="font-size:12.5px;color:var(--muted);line-height:1.6;">Loan applications and repayments are not connected to PawchPay yet.</p></div>
+      <div class="card" style="margin:6px 22px;">
+        <b style="font-size:14px;">No loan history available</b>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;">Loan applications and repayments are not connected to PawchPay yet.</p>
+      </div>
+    </div>
     </div>
   </div>
 
