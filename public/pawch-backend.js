@@ -784,5 +784,22 @@ const installed = window.matchMedia?.("(display-mode: standalone)").matches || w
     if (installed) window.switchTab("dashboard");
     const splash = document.getElementById("splash");
     if (splash) splash.setAttribute("onclick", "switchTab('dashboard')");
+    const fundingReference = new URLSearchParams(window.location.search).get("funding_reference");
+    if (fundingReference) {
+      // Paystack's browser return is not proof of settlement. Only the signed
+      // webhook credits the wallet; this screen deliberately reports pending.
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete("funding_reference");
+      window.history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+      window.openResult(true, "Payment submitted", "Your payment is awaiting verification. Your wallet is credited only after Paystack confirms the payment. Reference: " + fundingReference);
+      try { await refresh(); } catch (refreshError) {
+        console.error("[funding] wallet refresh after return failed", fundingReference, refreshError);
+      }
+      setTimeout(async () => {
+        try { await refresh(); } catch (refreshError) {
+          console.error("[funding] delayed wallet refresh failed", fundingReference, refreshError);
+        }
+      }, 5000);
+    }
   }
 })();
