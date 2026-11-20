@@ -25,6 +25,7 @@ const Fund = z.object({
 export const Route = createFileRoute("/api/wallet/savings")({
   server: {
     handlers: {
+      OPTIONS: async ({ request }) => corsPreflightResponse(request),
       GET: async ({ request }) => {
         try {
           const userId = await requireUser(request);
@@ -101,7 +102,7 @@ export const Route = createFileRoute("/api/wallet/savings")({
             if (/not found|goal/i.test(error.message)) throw new HttpError(404, "Savings goal not found.");
             throw error;
           }
-          return json({ ok: true });
+          return json({ ok: true }, 200, request);
         } catch (e) {
           return errorResponse(e, request);
         }
