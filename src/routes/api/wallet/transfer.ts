@@ -116,17 +116,23 @@ export const Route = createFileRoute("/api/wallet/transfer")({
           });
           if (resErr) throw new HttpError(resErr.message.includes("Insufficient") ? 402 : 400, resErr.message);
 
+          // Beneficiary history is optional. A failure to save it must never
+          // prevent the provider transfer after wallet funds have been reserved.
           try {
-            const { data: ben } = await db
+            const { data: ben, error: lookupError } = await db
               .from("beneficiaries")
               .select("id")
               .eq("user_id", userId)
               .eq("account_number", t.accountNumber)
               .eq("bank_code", t.bankCode)
               .maybeSingle();
-            if (ben) await db.from("beneficiaries").update({ recipient_code: recipient, name: accountName }).eq("id", ben.id);
-            else
-              await db.from("beneficiaries").insert({
+            if (lookupError) throw lookupError;
+            if (ben) {
+              const { error } = await db.from("beneficiaries")
+                .update({ recipient_code: recipient, name: accountName }).eq("id", ben.id);
+              if (error) throw error;
+            } else {
+              const { error } = await db.from("beneficiaries").insert({
                 user_id: userId,
                 name: accountName,
                 account_number: t.accountNumber,
@@ -134,7 +140,13 @@ export const Route = createFileRoute("/api/wallet/transfer")({
                 bank_name: t.bankName,
                 recipient_code: recipient,
               });
+              if (error) throw error;
+            }
+          } catch (beneficiaryError) {
+            console.error("[transfer beneficiary save skipped]", t.reference, beneficiaryError);
+          }
 
+          try {
             const tr = await initiateTransfer({ amountNaira: t.amount, recipient, reference: t.reference, reason: t.note || "PawchPay transfer" });
             if (tr.status === "success") {
               const { error: settleError } = await db.rpc("complete_transfer_by_reference", {
