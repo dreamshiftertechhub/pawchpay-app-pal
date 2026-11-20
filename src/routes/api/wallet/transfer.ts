@@ -94,6 +94,16 @@ export const Route = createFileRoute("/api/wallet/transfer")({
           // Never trust the client-supplied name: re-verify with the bank.
           const accountName = await resolveAccount(t.accountNumber, t.bankCode);
 
+          // Prepare the provider recipient before reserving wallet funds. If
+          // Paystack cannot create the recipient, the user's wallet is untouched.
+          let recipient: string;
+          try {
+            recipient = await createRecipient(accountName, t.accountNumber, t.bankCode);
+          } catch (e) {
+            if (e instanceof PaystackRejected) throw new HttpError(502, "The bank recipient could not be prepared. No money was deducted.");
+            throw e;
+          }
+
           const { error: resErr } = await db.rpc("reserve_transfer_for_user", {
             p_user_id: userId,
             p_reference: t.reference,
@@ -107,7 +117,6 @@ export const Route = createFileRoute("/api/wallet/transfer")({
           if (resErr) throw new HttpError(resErr.message.includes("Insufficient") ? 402 : 400, resErr.message);
 
           try {
-            const recipient = await createRecipient(accountName, t.accountNumber, t.bankCode);
             const { data: ben } = await db
               .from("beneficiaries")
               .select("id")
