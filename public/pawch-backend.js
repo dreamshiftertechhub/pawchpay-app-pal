@@ -128,7 +128,8 @@ window.doLogin = async function () {
     return;
   }
   await refresh();
-  await startSecurityCheck();
+  window.switchTab("dashboard");
+  toast("Welcome to PawchPay");
 };
 
 window.doSignUp = async function () {
@@ -147,40 +148,14 @@ window.doSignUp = async function () {
     window.openResult(false, "Sign up failed", error.message);
     return;
   }
-  await refresh();
-  await startSecurityCheck();
-};
-
-async function startSecurityCheck() {
-  const { data, error } = await sb.rpc("issue_login_code");
-  window.go("otp");
-  window.startTimer();
-  if (error) {
-    toast("Could not send code");
-    return;
+  const signedIn = await refresh();
+  if (signedIn) {
+    window.switchTab("dashboard");
+    toast("Your PawchPay account is ready");
+  } else {
+    window.openResult(true, "Check your email", "If email confirmation is enabled, use the confirmation link before signing in.");
+    window.go("login");
   }
-  setText("otpHint", `Demo mode: your security code is ${data}`);
-  toast(`Security code: ${data}`);
-}
-
-window.verifyOtp = async function () {
-  const boxes = document.querySelectorAll("#otp .otp-boxes input");
-  const code = Array.from(boxes)
-    .map((b) => b.value)
-    .join("");
-  if (code.length < 6) {
-    toast("Enter all 6 digits");
-    return;
-  }
-  const { data, error } = await sb.rpc("verify_login_code", { p_code: code });
-  if (error || !data) {
-    window.openResult(false, "Verification failed", "That code looks incorrect or has expired. Please try again.");
-    return;
-  }
-  boxes.forEach((b) => (b.value = ""));
-  await refresh();
-  window.switchTab("dashboard");
-  toast("Welcome to PawchPay");
 };
 
 window.logoutFlow = async function () {
