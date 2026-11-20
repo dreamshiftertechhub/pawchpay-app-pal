@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { verifySignature } from "@/lib/paystack.server";
+import { verifySignature, verifyPayment } from "@/lib/paystack.server";
 
 export const Route = createFileRoute("/api/public/paystack-webhook")({
   server: {
@@ -9,7 +9,7 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
         if (!(await verifySignature(raw, request.headers.get("x-paystack-signature")))) {
           return new Response("Invalid signature", { status: 401 });
         }
-        let payload: { event?: string; data?: { id?: number | string; reference?: string; transfer_code?: string } };
+        let payload: { event?: string; data?: { id?: number | string; reference?: string; transfer_code?: string; status?: string; amount?: number; currency?: string } };
         try {
           payload = JSON.parse(raw);
         } catch {
@@ -43,6 +43,22 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
             const { error } = await db.rpc("reverse_transfer_by_reference", {
               p_reference: reference,
               p_reason: event === "transfer.failed" ? "Transfer failed" : "Transfer reversed",
+            });
+            settlementError = error;
+          } else if (event === "charge.success") {
+            // Verify against Paystack's API as well as the signed webhook.
+            const verified = await verifyPayment(reference);
+            if (!verified || verified.status !== "success" || verified.currency !== "NGN" ||
+                verified.reference !== reference || !payload.data?.amount ||
+                verified.amount !== payload.data.amount) {
+              console.error("[webhook] funding verification mismatch", reference);
+              const { error: deleteError } = await db.from("paystack_events").delete().eq("event_key", eventKey);
+              if (deleteError) console.error("[webhook] could not release unverified funding event", eventKey, deleteError.message);
+              return new Response("verification failed", { status: 500 });
+            }
+            const { error } = await db.rpc("confirm_funding_by_reference", {
+              p_reference: reference,
+              p_amount: verified.amount / 100,
             });
             settlementError = error;
           }
