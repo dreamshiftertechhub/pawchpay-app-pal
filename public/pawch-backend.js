@@ -711,8 +711,11 @@ window.withdrawGoal = async function () {
     await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "withdraw", goalId: activeGoal.id, amount, pin, reference: pendingWithdrawalRef }) });
     pendingWithdrawalRef = null;
     window.closeModal("fundGoalModal");
-    await refresh();
-    window.openResult(true, "Withdrawal complete", money(amount) + " returned to your wallet.");
+    try { await refresh(); } catch (refreshError) {
+      console.error("[savings] wallet refresh failed after withdrawal", refreshError);
+      toast("Withdrawal processed. Wallet display could not refresh; check your transaction history.");
+    }
+    window.openResult(true, "Withdrawal processed", money(amount) + " was returned to your wallet. Check your updated balance and history.");
   } catch (e) { $("fundGoalPin").value = ""; toast(e.message); }
   finally { savingBusy = false; $("fundGoalBtn").disabled = false; $("fundGoalBtn").textContent = "Withdraw to wallet"; }
 };
@@ -728,8 +731,11 @@ window.fundGoal = async function () {
     await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "fund", goalId: activeGoal.id, amount, pin, reference: pendingFundingRef }) });
     pendingFundingRef = null;
     window.closeModal("fundGoalModal");
-    await refresh();
-    window.openResult(true, "Money saved", `${money(amount)} moved into ${activeGoal.name}.`);
+    try { await refresh(); } catch (refreshError) {
+      console.error("[savings] wallet refresh failed after contribution", refreshError);
+      toast("Savings contribution processed. Wallet display could not refresh; check your savings and transaction history.");
+    }
+    window.openResult(true, "Money saved", `${money(amount)} was moved into ${activeGoal.name}.`);
   } catch (e) {
     $("fundGoalPin").value = "";
     toast(e.message);
