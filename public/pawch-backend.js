@@ -667,6 +667,7 @@ window.openFundGoal = function (id) {
   $("fundGoalBtn").onclick = window.fundGoal;
   setText("fundGoalSub", `Wallet balance: ${money(state.wallet?.balance)}`);
   pendingFundingRef = crypto.randomUUID();
+  pendingFundingRef = crypto.randomUUID();
   $("fundGoalAmount").value = ""; $("fundGoalPin").value = "";
   $("fundGoalModal").classList.add("show");
 };
