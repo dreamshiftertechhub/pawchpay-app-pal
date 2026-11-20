@@ -20,13 +20,14 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
         const eventKey = `${event}:${payload.data?.id ?? reference ?? ""}`;
 
         const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
-        const { data: seen } = await db.from("paystack_events").select("id").eq("event_key", eventKey).maybeSingle();
-        if (seen) return new Response("ok");
+        // The event row is a deduplication record, not proof that settlement
+        // completed. Always retry the idempotent ledger RPCs for duplicate
+        // deliveries; otherwise a failed delete could permanently suppress
+        // a later Paystack retry.
         const { error: insErr } = await db
           .from("paystack_events")
           .insert({ event_key: eventKey, event_type: event, reference, payload: payload as never });
-        if (insErr) {
-          if (insErr.code === "23505") return new Response("ok");
+        if (insErr && insErr.code !== "23505") {
           console.error("[webhook] store failed", insErr.message);
           return new Response("retry", { status: 500 });
         }
