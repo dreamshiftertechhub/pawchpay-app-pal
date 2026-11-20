@@ -1119,16 +1119,21 @@ function verifyOtp(){
 }
 
 // -------- Dashboard: balance mask --------
+// Account-specific balance and account number are supplied only after a
+// verified session loads. Never display or copy placeholder financial data.
 let balanceVisible = true;
 function toggleBalance(){
   balanceVisible = !balanceVisible;
-  document.getElementById('balanceTxt').textContent = balanceVisible ? '₦248,530.00' : '₦•••••••';
+  const balance = document.getElementById('balanceTxt');
+  if (balance) balance.textContent = '—';
 }
 function copyAcct(el){
-  navigator.clipboard && navigator.clipboard.writeText('8102447190').catch(()=>{});
   const pill = document.getElementById('copiedPill');
-  pill.classList.add('show');
-  setTimeout(()=>pill.classList.remove('show'), 1400);
+  if (pill) {
+    pill.textContent = 'Account details unavailable';
+    pill.classList.add('show');
+    setTimeout(()=>pill.classList.remove('show'), 1400);
+  }
 }
 
 // -------- Send money flow --------
