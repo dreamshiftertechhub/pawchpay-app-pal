@@ -32,16 +32,28 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
         }
 
         if (reference) {
+          let settlementError: { message: string } | null = null;
           if (event === "transfer.success") {
-            await db.rpc("complete_transfer_by_reference", {
+            const { error } = await db.rpc("complete_transfer_by_reference", {
               p_reference: reference,
               ...(payload.data?.transfer_code ? { p_provider_transfer_code: payload.data.transfer_code } : {}),
             });
+            settlementError = error;
           } else if (event === "transfer.failed" || event === "transfer.reversed") {
-            await db.rpc("reverse_transfer_by_reference", {
+            const { error } = await db.rpc("reverse_transfer_by_reference", {
               p_reference: reference,
               p_reason: event === "transfer.failed" ? "Transfer failed" : "Transfer reversed",
             });
+            settlementError = error;
+          }
+
+          if (settlementError) {
+            // Do not leave a failed settlement marked as processed: Paystack
+            // must be able to retry this webhook after the ledger issue is fixed.
+            console.error("[webhook] transfer settlement failed", reference, settlementError.message);
+            const { error: deleteError } = await db.from("paystack_events").delete().eq("event_key", eventKey);
+            if (deleteError) console.error("[webhook] could not release event for retry", eventKey, deleteError.message);
+            return new Response("retry", { status: 500 });
           }
         }
         return new Response("ok");
