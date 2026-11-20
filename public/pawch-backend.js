@@ -98,17 +98,26 @@ function render() {
 }
 
 async function refresh() {
-  const { data: sess } = await sb.auth.getSession();
+  const { data: sess, error: sessionError } = await sb.auth.getSession();
+  if (sessionError) throw sessionError;
   if (!sess.session) return false;
-  state.user = sess.session.user;
-  const [{ data: profile }, { data: wallet }, { data: txns }] = await Promise.all([
-    sb.from("profiles").select("*").eq("id", state.user.id).maybeSingle(),
-    sb.from("wallets").select("*").eq("user_id", state.user.id).maybeSingle(),
-    sb.from("transactions").select("*").order("created_at", { ascending: false }).limit(50),
+  const user = sess.session.user;
+  const [profileResult, walletResult, txnResult] = await Promise.all([
+    sb.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+    sb.from("wallets").select("*").eq("user_id", user.id).maybeSingle(),
+    sb.from("transactions").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(50),
   ]);
-  state.profile = profile;
-  state.wallet = wallet;
-  state.txns = txns || [];
+  if (profileResult.error) throw profileResult.error;
+  if (walletResult.error) throw walletResult.error;
+  if (txnResult.error) throw txnResult.error;
+  if (!walletResult.data) throw new Error("Your wallet could not be loaded. Please try again; no balance has been assumed.");
+
+  // Publish a new snapshot only after every required query succeeds. This
+  // prevents a failed request from replacing a real balance with a fake zero.
+  state.user = user;
+  state.profile = profileResult.data;
+  state.wallet = walletResult.data;
+  state.txns = txnResult.data || [];
   render();
   loadSecureData();
   loadSavings();
