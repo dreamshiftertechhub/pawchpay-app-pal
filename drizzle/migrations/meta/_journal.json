@@ -36,6 +36,13 @@
       "when": 1795183260000,
       "tag": "0004_savings_withdrawals",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1795183320000,
+      "tag": "0005_retry_safe_savings_funding",
+      "breakpoints": true
     }
   ]
 }
