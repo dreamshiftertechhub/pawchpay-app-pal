@@ -21,9 +21,19 @@ type Db = Awaited<ReturnType<typeof admin>>;
 async function reconcile(db: Db, reference: string) {
   const v = await verifyTransfer(reference);
   if (!v) return;
-  if (v.status === "success") await db.rpc("complete_transfer_by_reference", { p_reference: reference, p_provider_transfer_code: v.transfer_code });
-  else if (v.status === "failed" || v.status === "reversed")
-    await db.rpc("reverse_transfer_by_reference", { p_reference: reference, p_reason: `Transfer ${v.status}` });
+  if (v.status === "success") {
+    const { error } = await db.rpc("complete_transfer_by_reference", {
+      p_reference: reference,
+      p_provider_transfer_code: v.transfer_code,
+    });
+    if (error) throw error;
+  } else if (v.status === "failed" || v.status === "reversed") {
+    const { error } = await db.rpc("reverse_transfer_by_reference", {
+      p_reference: reference,
+      p_reason: `Transfer ${v.status}`,
+    });
+    if (error) throw error;
+  }
 }
 
 async function currentStatus(db: Db, userId: string, reference: string) {
@@ -112,7 +122,16 @@ export const Route = createFileRoute("/api/wallet/transfer")({
 
             const tr = await initiateTransfer({ amountNaira: t.amount, recipient, reference: t.reference, reason: t.note || "PawchPay transfer" });
             if (tr.status === "success") {
-              await db.rpc("complete_transfer_by_reference", { p_reference: t.reference, p_provider_transfer_code: tr.transfer_code });
+              const { error: settleError } = await db.rpc("complete_transfer_by_reference", {
+                p_reference: t.reference,
+                p_provider_transfer_code: tr.transfer_code,
+              });
+              if (settleError) {
+                // Paystack accepted the transfer, but the ledger did not confirm
+                // settlement. Keep it pending so webhook/status reconciliation can retry.
+                console.error("[transfer settlement pending]", t.reference, settleError.message);
+                return json({ status: "pending", reference: t.reference, recipientName: accountName }, 200, request);
+              }
               return json({ status: "success", reference: t.reference, recipientName: accountName }, 200, request);
             }
             if (tr.status === "otp") {
