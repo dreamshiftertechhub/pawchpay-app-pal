@@ -15,6 +15,29 @@ async function call<T>(path: string, init?: RequestInit): Promise<{ ok: boolean;
   return { ok: res.ok && body?.status === true, status: res.status, body, data: body?.data as T };
 }
 
+export async function initializePayment(input: { email: string; amountNaira: number; reference: string; callbackUrl: string }) {
+  const r = await call<{ authorization_url: string; access_code: string; reference: string }>("/transaction/initialize", {
+    method: "POST",
+    body: JSON.stringify({
+      email: input.email,
+      amount: Math.round(input.amountNaira * 100),
+      currency: "NGN",
+      reference: input.reference,
+      callback_url: input.callbackUrl,
+      metadata: { custom_fields: [{ display_name: "Wallet", variable_name: "wallet_funding", value: "PawchPay wallet funding" }] },
+    }),
+  });
+  if (!r.ok || !r.data?.authorization_url) throw new HttpError(502, "Could not start card payment. Please try again.");
+  return r.data;
+}
+
+export async function verifyPayment(reference: string) {
+  const r = await call<{ status: string; reference: string; amount: number; currency: string; customer?: { email?: string } }>(
+    `/transaction/verify/${encodeURIComponent(reference)}`,
+  );
+  return r.ok ? r.data : null;
+}
+
 export async function listBanks() {
   const r = await call<Array<{ name: string; code: string; active: boolean; type: string }>>(
     "/bank?country=nigeria&currency=NGN&perPage=200",
