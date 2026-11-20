@@ -449,9 +449,19 @@ window.authorizeTransfer = async function () {
       window.go("changePin");
     } else {
       window.closeModal("confirmModal");
-      if (e.status !== 423) pendingRef = null; // nothing was sent; a retry gets a new reference
-      await refresh();
-      window.openResult(false, "Transfer not sent", e.message);
+      const definitelyRejected = [400, 401, 402, 403, 404, 409, 423, 428].includes(Number(e.status));
+      if (definitelyRejected) {
+        pendingRef = null;
+        try { await refresh(); } catch (refreshError) {
+          console.error("[transfer] refresh after rejected request failed", refreshError);
+        }
+        window.openResult(false, "Transfer not sent", e.message || "The request was rejected before a transfer was created.");
+      } else {
+        // A timeout, lost connection, or server error can happen after the
+        // provider accepted the instruction. Keep the same idempotency key:
+        // a retry must reconcile the original request, never create a new one.
+        window.openResult(false, "Transfer status not confirmed", "We could not confirm the result of this request. Do not start a new transfer. Your reference is " + (pendingRef || "being retained") + ". Retry the same request later so we can check its status.");
+      }
     }
   } finally {
     sending = false;
