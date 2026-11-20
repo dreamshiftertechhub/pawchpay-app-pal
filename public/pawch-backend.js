@@ -509,6 +509,7 @@ window.buyAirtime = function () {
 state.goals = [];
 let activeGoal = null;
 let savingBusy = false;
+let pendingWithdrawalRef = null;
 async function loadSavings() {
   try {
     const r = await api("/api/wallet/savings");
@@ -590,6 +591,14 @@ window.openGoalDetail = function (id) {
     <div class="gd-grid"><div><span>Saved</span><b>${money(g.saved_amount)}</b></div><div><span>Remaining</span><b>${money(remaining)}</b></div><div><span>Target</span><b>${money(g.target_amount)}</b></div><div><span>Started</span><b>${fmtDate(g.created_at)}</b></div></div>
     ${plan ? `<div class="plan-box">${planHtml(plan)}</div>` : ""}
     ${done ? "" : `<button class="btn btn-primary" onclick="closeModal('goalDetailModal');openFundGoal('${g.id}')">Add money</button>`}`;
+  if (Number(g.saved_amount) > 0) {
+    const withdrawBtn = document.createElement("button");
+    withdrawBtn.className = "btn btn-secondary";
+    withdrawBtn.style.marginTop = "10px";
+    withdrawBtn.textContent = "Withdraw to wallet";
+    withdrawBtn.onclick = () => { window.closeModal("goalDetailModal"); window.openWithdrawGoal(g.id); };
+    $("gdBody").appendChild(withdrawBtn);
+  }
   $("goalDetailModal").classList.add("show");
 };
 window.selectGoalCat = function (key) {
@@ -635,6 +644,35 @@ window.openFundGoal = function (id) {
   setText("fundGoalSub", `Wallet balance: ${money(state.wallet?.balance)}`);
   $("fundGoalAmount").value = ""; $("fundGoalPin").value = "";
   $("fundGoalModal").classList.add("show");
+};
+window.openWithdrawGoal = function (id) {
+  activeGoal = state.goals.find((g) => g.id === id);
+  if (!activeGoal || Number(activeGoal.saved_amount) <= 0) return;
+  if (state.hasPin === false) { toast("Create your transaction PIN first"); window.__pinReturn = "savings"; return window.go("changePin"); }
+  pendingWithdrawalRef = crypto.randomUUID();
+  setText("fundGoalTitle", "Withdraw from " + activeGoal.name);
+  setText("fundGoalSub", "Up to " + money(activeGoal.saved_amount) + " can be returned to your wallet.");
+  $("fundGoalBtn").textContent = "Withdraw to wallet";
+  $("fundGoalBtn").onclick = window.withdrawGoal;
+  $("fundGoalAmount").value = ""; $("fundGoalPin").value = "";
+  $("fundGoalModal").classList.add("show");
+};
+window.withdrawGoal = async function () {
+  if (savingBusy || !activeGoal) return;
+  const amount = digits($("fundGoalAmount").value);
+  const pin = $("fundGoalPin").value;
+  if (amount < 100) return toast("Minimum is ₦100");
+  if (amount > Number(activeGoal.saved_amount || 0)) return toast("Amount exceeds available savings");
+  if (!/^\d{4}$/.test(pin)) return toast("Enter your 4-digit PIN");
+  savingBusy = true; $("fundGoalBtn").disabled = true; $("fundGoalBtn").textContent = "Processing…";
+  try {
+    await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "withdraw", goalId: activeGoal.id, amount, pin, reference: pendingWithdrawalRef }) });
+    pendingWithdrawalRef = null;
+    window.closeModal("fundGoalModal");
+    await refresh();
+    window.openResult(true, "Withdrawal complete", money(amount) + " returned to your wallet.");
+  } catch (e) { $("fundGoalPin").value = ""; toast(e.message); }
+  finally { savingBusy = false; $("fundGoalBtn").disabled = false; $("fundGoalBtn").textContent = "Withdraw to wallet"; }
 };
 window.fundGoal = async function () {
   if (savingBusy || !activeGoal) return;
