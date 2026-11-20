@@ -641,6 +641,8 @@ window.openFundGoal = function (id) {
   if (!activeGoal) return;
   if (state.hasPin === false) { toast("Create your transaction PIN first"); window.__pinReturn = "savings"; return window.go("changePin"); }
   setText("fundGoalTitle", `Add to ${activeGoal.name}`);
+  $("fundGoalBtn").textContent = "Save now";
+  $("fundGoalBtn").onclick = window.fundGoal;
   setText("fundGoalSub", `Wallet balance: ${money(state.wallet?.balance)}`);
   $("fundGoalAmount").value = ""; $("fundGoalPin").value = "";
   $("fundGoalModal").classList.add("show");
