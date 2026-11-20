@@ -531,6 +531,7 @@ state.goals = [];
 let activeGoal = null;
 let savingBusy = false;
 let pendingWithdrawalRef = null;
+let pendingFundingRef = null;
 async function loadSavings() {
   try {
     const r = await api("/api/wallet/savings");
@@ -665,6 +666,7 @@ window.openFundGoal = function (id) {
   $("fundGoalBtn").textContent = "Save now";
   $("fundGoalBtn").onclick = window.fundGoal;
   setText("fundGoalSub", `Wallet balance: ${money(state.wallet?.balance)}`);
+  pendingFundingRef = crypto.randomUUID();
   $("fundGoalAmount").value = ""; $("fundGoalPin").value = "";
   $("fundGoalModal").classList.add("show");
 };
@@ -706,7 +708,8 @@ window.fundGoal = async function () {
   if (!/^\d{4}$/.test(pin)) return toast("Enter your 4-digit PIN");
   savingBusy = true; $("fundGoalBtn").disabled = true; $("fundGoalBtn").textContent = "Saving…";
   try {
-    await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "fund", goalId: activeGoal.id, amount, pin }) });
+    await api("/api/wallet/savings", { method: "POST", body: JSON.stringify({ action: "fund", goalId: activeGoal.id, amount, pin, reference: pendingFundingRef }) });
+    pendingFundingRef = null;
     window.closeModal("fundGoalModal");
     await refresh();
     window.openResult(true, "Money saved", `${money(amount)} moved into ${activeGoal.name}.`);
