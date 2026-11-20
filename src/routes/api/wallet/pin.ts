@@ -9,7 +9,12 @@ const Body = z.object({
 
 async function hasPin(userId: string) {
   const db = await admin();
-  const { data } = await db.from("transaction_security").select("user_id").eq("user_id", userId).maybeSingle();
+  const { data, error } = await db
+    .from("transaction_security")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new HttpError(503, "Could not check transaction PIN status.");
   return !!data;
 }
 
