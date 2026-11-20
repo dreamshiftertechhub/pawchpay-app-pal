@@ -21,6 +21,13 @@ const Fund = z.object({
   amount: z.number().int().min(100).max(10_000_000),
   pin: z.string().regex(/^\d{4}$/),
 });
+const Withdraw = z.object({
+  action: z.literal("withdraw"),
+  goalId: z.string().uuid(),
+  amount: z.number().int().min(100).max(10_000_000),
+  pin: z.string().regex(/^\d{4}$/),
+  reference: z.string().uuid(),
+});
 
 export const Route = createFileRoute("/api/wallet/savings")({
   server: {
@@ -84,18 +91,36 @@ export const Route = createFileRoute("/api/wallet/savings")({
             if (error) throw error;
             return json({ ok: true }, 200, request);
           }
-          const p = Fund.safeParse(raw);
-          if (!p.success) throw new HttpError(400, "Enter an amount of at least ₦100 and your 4-digit PIN.");
+          const isWithdraw = raw?.action === "withdraw";
+          const p = (isWithdraw ? Withdraw : Fund).safeParse(raw);
+          if (!p.success) throw new HttpError(400, "Check the amount, goal, PIN and withdrawal reference.");
           const { data: pinOk, error: pinErr } = await db.rpc("verify_transaction_pin_for_user", {
             p_user_id: userId,
             p_pin: p.data.pin,
           });
           if (pinErr) throw new HttpError(pinErr.message.includes("not been set") ? 428 : 423, pinErr.message);
           if (!pinOk) throw new HttpError(401, "Incorrect PIN.");
+          if (isWithdraw) {
+            const withdrawal = p.data as z.infer<typeof Withdraw>;
+            const { error } = await db.rpc("withdraw_savings_goal_for_user", {
+              p_user_id: userId,
+              p_goal_id: withdrawal.goalId,
+              p_amount: withdrawal.amount,
+              p_reference: withdrawal.reference,
+            });
+            if (error) {
+              if (/exceeds savings balance/i.test(error.message)) throw new HttpError(400, "Withdrawal exceeds the amount saved in this goal.");
+              if (/not found|closed/i.test(error.message)) throw new HttpError(404, "Savings goal not found or closed.");
+              if (/reference already used/i.test(error.message)) throw new HttpError(409, "This withdrawal reference has already been used.");
+              throw error;
+            }
+            return json({ ok: true, status: "success" }, 200, request);
+          }
+          const funding = p.data as z.infer<typeof Fund>;
           const { error } = await db.rpc("fund_savings_goal_for_user", {
             p_user_id: userId,
-            p_goal_id: p.data.goalId,
-            p_amount: p.data.amount,
+            p_goal_id: funding.goalId,
+            p_amount: funding.amount,
           });
           if (error) {
             if (/insufficient/i.test(error.message)) throw new HttpError(400, "Insufficient wallet balance.");
