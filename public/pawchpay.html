@@ -782,7 +782,7 @@
         <div class="profile-avatar" id="profileAvatar">PP</div>
         <h3 style="margin:0; font-size:18px;" id="profileName">PawchPay user</h3>
         <span style="font-size:13px; color:var(--muted);" id="profileEmail"></span>
-        <div class="kyc-chip"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Tier 3 Verified</div>
+        <div class="kyc-chip">Verification status unavailable</div>
       </div>
       <div class="stat-grid">
         <div class="stat-box"><b id="profileBalance">₦0.00</b><span>Balance</span></div>
@@ -924,14 +924,10 @@
   <div class="screen" id="identityVerification">
     <div class="topbar"><div class="iconbtn back" onclick="go('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Identity Verification</h3></div>
     <div class="scroll">
-      <div class="card" style="margin:6px 22px; display:flex; align-items:center; gap:14px; background:var(--mint-tint); border:none;">
-        <div style="width:44px;height:44px;border-radius:13px;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--mint-deep);flex-shrink:0;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6FCBA5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
-        <div><b style="font-size:14px; display:block;">You're Tier 3 verified</b><span style="font-size:12px; color:var(--mint-deep);">Highest tier — no further limits</span></div>
+      <div class="card" style="margin:6px 22px;">
+        <b style="font-size:14px; display:block;">Identity verification is not connected yet</b>
+        <p style="font-size:12.5px; color:var(--muted); margin:8px 0 0; line-height:1.6;">Your verification status and transaction limits will appear here when a verified identity-check provider is integrated. No verification level is currently being claimed.</p>
       </div>
-      <div class="section-head"><h3>Verification levels</h3><span></span></div>
-      <div class="list-row"><div class="ic" style="background:var(--mint-tint); color:var(--mint-deep);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="body"><b>Tier 1 — Phone &amp; BVN</b><span>₦50,000 daily limit · Completed</span></div><div class="status-tag success">Done</div></div>
-      <div class="list-row"><div class="ic" style="background:var(--mint-tint); color:var(--mint-deep);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="body"><b>Tier 2 — Government ID</b><span>₦500,000 daily limit · Completed</span></div><div class="status-tag success">Done</div></div>
-      <div class="list-row" style="border-bottom:none;"><div class="ic" style="background:var(--mint-tint); color:var(--mint-deep);"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="body"><b>Tier 3 — Proof of address</b><span>Unlimited transactions · Completed</span></div><div class="status-tag success">Done</div></div>
     </div>
   </div>
 
@@ -939,21 +935,10 @@
   <div class="screen" id="referEarn">
     <div class="topbar"><div class="iconbtn back" onclick="go('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Refer &amp; Earn</h3></div>
     <div class="scroll">
-      <div class="wallet-card" style="margin-top:6px; text-align:center;">
-        <span style="color:#9FB3AC; font-size:12.5px;">You've earned</span>
-        <div class="balance">₦12,000</div>
-        <div class="balance-sub" style="justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg> from 12 successful referrals</div>
+      <div class="card" style="margin:6px 22px;">
+        <b style="font-size:14px; display:block;">Referrals are not available yet</b>
+        <p style="font-size:12.5px; color:var(--muted); margin:8px 0 0; line-height:1.6;">Referral codes, rewards and earnings will be shown here after the referral programme is implemented and connected to verified transactions.</p>
       </div>
-      <div class="px" style="margin-top:22px;">
-        <label style="font-size:12.5px; font-weight:600; color:var(--muted);">Your referral code</label>
-        <div class="acct-badge" style="display:flex; width:100%; justify-content:space-between; background:var(--surface); color:var(--ink); border:1.5px solid var(--line); margin-top:8px;" onclick="referCopy(this)">
-          <div class="copied-pill" id="referCopiedPill">Copied!</div>
-          <b>DAVID-PWX2291</b><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-        </div>
-        <button class="btn btn-primary" style="margin-top:18px;" onclick="toast('Share sheet opened')">Share Invite Link</button>
-      </div>
-      <div class="section-head"><h3>How it works</h3><span></span></div>
-      <div class="list-row" style="border-bottom:none;"><div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 010-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 000-5C13 2 12 7 12 7z"/></svg></div><div class="body"><b>Earn ₦1,000 per friend</b><span>They must fund their wallet once to qualify</span></div></div>
     </div>
   </div>
 
