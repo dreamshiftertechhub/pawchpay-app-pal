@@ -22,6 +22,20 @@
       "when": 1792236247892,
       "tag": "0002_add_savings_goal_category",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795183200000,
+      "tag": "0003_disable_insecure_demo_otp",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795183260000,
+      "tag": "0004_savings_withdrawals",
+      "breakpoints": true
     }
   ]
 }
