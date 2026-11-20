@@ -20,6 +20,7 @@ const Fund = z.object({
   goalId: z.string().uuid(),
   amount: z.number().int().min(100).max(10_000_000),
   pin: z.string().regex(/^\d{4}$/),
+  reference: z.string().uuid(),
 });
 const Withdraw = z.object({
   action: z.literal("withdraw"),
