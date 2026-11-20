@@ -52,9 +52,12 @@ function txRows(list) {
     .join("");
 }
 function statusTag(t) {
-  let cls = t.status, label = t.status[0].toUpperCase() + t.status.slice(1);
-  if (t.kind === "transfer" && t.status === "failed") { cls = "reversed"; label = "Reversed"; }
-  if (t.kind === "reversal") label = "Refunded";
+  const status = String(t?.status || "pending").toLowerCase();
+  const allowed = new Set(["pending", "success", "failed", "reversed"]);
+  let cls = allowed.has(status) ? status : "pending";
+  let label = cls.charAt(0).toUpperCase() + cls.slice(1);
+  if (t?.kind === "transfer" && status === "failed") { cls = "reversed"; label = "Reversed"; }
+  if (t?.kind === "reversal") label = "Refunded";
   return `<div class="status-tag ${cls}">${label}</div>`;
 }
 const escapeHtml = (s) =>
@@ -381,12 +384,17 @@ async function checkLater(reference, tries = 3) {
     try {
       const r = await api(`/api/wallet/transfer?reference=${encodeURIComponent(reference)}`);
       if (r.status !== "pending") {
-        await refresh();
+        try { await refresh(); } catch (refreshError) {
+          console.error("[transfer] status confirmed but wallet refresh failed", reference, refreshError);
+        }
         toast(r.status === "success" ? "Transfer confirmed by the bank" : "Transfer failed — money returned to your wallet");
         return;
       }
-    } catch {}
+    } catch (error) {
+      console.error("[transfer] status check failed", reference, error);
+    }
   }
+  toast("Transfer is still pending. Check transaction history before trying again. Reference: " + reference);
 }
 
 window.authorizeTransfer = async function () {
