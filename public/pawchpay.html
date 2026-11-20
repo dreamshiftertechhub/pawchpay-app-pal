@@ -794,17 +794,9 @@
   <div class="screen" id="editProfile">
     <div class="topbar"><div class="iconbtn back" onclick="go('profile')"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 18l-6-6 6-6"/></svg></div><h3>Edit Profile</h3></div>
     <div class="scroll">
-      <div class="profile-head" style="padding-top:10px;">
-        <div class="profile-avatar" style="position:relative;">DE
-          <div style="position:absolute; bottom:-2px; right:-2px; width:26px;height:26px;border-radius:50%;background:var(--mint);display:flex;align-items:center;justify-content:center;color:#04140E;border:3px solid var(--bg);" onclick="toast('Photo picker opened')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
-        </div>
-      </div>
-      <div class="px">
-        <div class="field"><label>Full name</label><input type="text" value="David Eze"></div>
-        <div class="field"><label>Email</label><input type="text" value="david.eze@email.com"></div>
-        <div class="field"><label>Phone number</label><input type="text" id="editPhone" value=""></div>
-        <div class="field"><label>PawchPay tag</label><input type="text" value="@davideze"></div>
-        <button class="btn btn-primary" onclick="toast('Profile updated'); go('profile')">Save Changes</button>
+      <div class="card" style="margin:12px 22px;">
+        <b style="font-size:14px;">Profile editing is not available yet</b>
+        <p style="font-size:12.5px;color:var(--muted);line-height:1.6;">Your name and account details are currently read from your PawchPay account. Profile changes and photo uploads are not connected on this screen.</p>
       </div>
     </div>
   </div>
@@ -1305,23 +1297,7 @@ function applyLoan(){
   openResult(false, 'Loans coming soon', 'PawchLoan is not available yet. No application was submitted.');
 }
 
-// -------- Cards screen --------
-let cvvVisible = false;
-function revealCvv(){
-  cvvVisible = !cvvVisible;
-  document.getElementById('cardCvv').textContent = cvvVisible ? '482' : '•••';
-}
-function copyCardNum(){
-  navigator.clipboard && navigator.clipboard.writeText('5399123456784471').catch(()=>{});
-  toast('Card number copied');
-}
-function toggleFreeze(rowEl){
-  const toggle = rowEl.querySelector('.toggle');
-  toggle.classList.toggle('on');
-  const label = document.getElementById('freezeLabel');
-  label.textContent = toggle.classList.contains('on') ? 'Card frozen' : 'Freeze card';
-  toast(toggle.classList.contains('on') ? 'Card frozen — no transactions allowed' : 'Card unfrozen');
-}
+// Card controls remain unavailable until a card issuer is integrated.
 
 // -------- Result / Confirm modals --------
 function openResult(success, title, desc, onDone){
