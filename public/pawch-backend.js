@@ -414,7 +414,13 @@ window.authorizeTransfer = async function () {
     const ref = pendingRef;
     pendingRef = null;
     window.closeModal("confirmModal");
-    await refresh();
+    // The transfer API response is authoritative for this attempt. A later
+    // dashboard refresh failure must not relabel an accepted/pending transfer
+    // as "not sent" or encourage the user to submit it again.
+    try { await refresh(); } catch (refreshError) {
+      console.error("[transfer] wallet refresh failed after API response", ref, refreshError);
+      toast("Transfer status received. Wallet refresh is temporarily unavailable.");
+    }
     const to = r.recipientName || recipient.name;
     if (r.status === "success") {
       window.openResult(true, "Transfer successful", `${money(amount)} was delivered to ${to}. Confirmed by the bank.`, () => {
@@ -422,7 +428,7 @@ window.authorizeTransfer = async function () {
         window.switchTab("dashboard");
       });
     } else if (r.status === "pending") {
-      window.openResult(true, "Transfer pending", `${money(amount)} to ${to} is being processed. It is not complete until the bank confirms; if it fails, the money returns to your wallet automatically.`, () => {
+      window.openResult(true, "Transfer pending", `${money(amount)} to ${to} is being processed. It is not complete until the bank confirms; if it fails, the money returns to your wallet automatically. Reference: ${ref}`, () => {
         resetSendForm();
         window.switchTab("dashboard");
       });
