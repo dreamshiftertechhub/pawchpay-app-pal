@@ -37,12 +37,13 @@ async function reconcile(db: Db, reference: string) {
 }
 
 async function currentStatus(db: Db, userId: string, reference: string) {
-  const { data } = await db
+  const { data, error } = await db
     .from("transfer_requests")
     .select("status, amount, recipient_name")
     .eq("reference", reference)
     .eq("user_id", userId)
     .maybeSingle();
+  if (error) throw error;
   return data;
 }
 
@@ -75,7 +76,12 @@ export const Route = createFileRoute("/api/wallet/transfer")({
           const db = await admin();
 
           // Idempotency: a repeated reference returns the original outcome, never a second send.
-          const { data: existing } = await db.from("transfer_requests").select("user_id, status").eq("reference", t.reference).maybeSingle();
+          const { data: existing, error: existingError } = await db
+            .from("transfer_requests")
+            .select("user_id, status")
+            .eq("reference", t.reference)
+            .maybeSingle();
+          if (existingError) throw new HttpError(503, "Could not verify this transfer reference. Please try again.");
           if (existing) {
             if (existing.user_id !== userId) throw new HttpError(409, "Duplicate reference.");
             return json({ status: existing.status, reference: t.reference, duplicate: true }, 200, request);
@@ -135,7 +141,14 @@ export const Route = createFileRoute("/api/wallet/transfer")({
               return json({ status: "success", reference: t.reference, recipientName: accountName }, 200, request);
             }
             if (tr.status === "otp") {
-              await db.rpc("reverse_transfer_by_reference", { p_reference: t.reference, p_reason: "Provider requires OTP" });
+              const { error: reverseError } = await db.rpc("reverse_transfer_by_reference", {
+                p_reference: t.reference,
+                p_reason: "Provider requires OTP",
+              });
+              if (reverseError) {
+                console.error("[transfer reversal pending]", t.reference, reverseError.message);
+                return json({ status: "pending", reference: t.reference, recipientName: accountName }, 200, request);
+              }
               throw new HttpError(503, "Transfers are temporarily unavailable. Your money has been returned to your wallet.");
             }
             await db.from("transfer_requests").update({ provider_transfer_code: tr.transfer_code }).eq("reference", t.reference);
@@ -143,7 +156,14 @@ export const Route = createFileRoute("/api/wallet/transfer")({
           } catch (e) {
             if (e instanceof PaystackRejected) {
               console.error("[transfer rejected]", t.reference, e.message);
-              await db.rpc("reverse_transfer_by_reference", { p_reference: t.reference, p_reason: "Rejected by provider" });
+              const { error: reverseError } = await db.rpc("reverse_transfer_by_reference", {
+                p_reference: t.reference,
+                p_reason: "Rejected by provider",
+              });
+              if (reverseError) {
+                console.error("[transfer reversal pending]", t.reference, reverseError.message);
+                return json({ status: "pending", reference: t.reference, recipientName: accountName }, 200, request);
+              }
               throw new HttpError(502, "The bank transfer could not be started. Your money has been returned to your wallet.");
             }
             if (e instanceof HttpError) throw e;
