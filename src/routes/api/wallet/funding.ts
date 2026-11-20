@@ -34,7 +34,7 @@ export const Route = createFileRoute("/api/wallet/funding")({
               email: authData.user.email,
               amountNaira: parsed.data.amount,
               reference,
-              callbackUrl: new URL("/", request.url).toString(),
+              callbackUrl: new URL("/?funding_reference=" + encodeURIComponent(reference), request.url).toString(),
             });
             const { error: updateError } = await db.from("payment_intents")
               .update({ provider_data: { authorization_url: payment.authorization_url, access_code: payment.access_code } })
