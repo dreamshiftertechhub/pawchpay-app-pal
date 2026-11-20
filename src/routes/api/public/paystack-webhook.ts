@@ -56,17 +56,17 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
               if (deleteError) console.error("[webhook] could not release unverified funding event", eventKey, deleteError.message);
               return new Response("verification failed", { status: 500 });
             }
-            const { error } = await db.rpc("confirm_funding_by_reference", {
+            const { data: credited, error } = await db.rpc("confirm_funding_by_reference", {
               p_reference: reference,
               p_amount: verified.amount / 100,
             });
-            settlementError = error;
+            settlementError = error || (!credited ? { message: "Funding reference or amount did not match a pending payment intent." } : null);
           }
 
           if (settlementError) {
             // Do not leave a failed settlement marked as processed: Paystack
             // must be able to retry this webhook after the ledger issue is fixed.
-            console.error("[webhook] transfer settlement failed", reference, settlementError.message);
+            console.error("[webhook] payment settlement failed", reference, settlementError.message);
             const { error: deleteError } = await db.from("paystack_events").delete().eq("event_key", eventKey);
             if (deleteError) console.error("[webhook] could not release event for retry", eventKey, deleteError.message);
             return new Response("retry", { status: 500 });
