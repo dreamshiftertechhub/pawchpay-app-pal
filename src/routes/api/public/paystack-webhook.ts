@@ -17,6 +17,9 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
         }
         const event = String(payload.event || "");
         const reference = payload.data?.reference ? String(payload.data.reference) : null;
+        const handledEvent = event === "charge.success" || event === "transfer.success" ||
+          event === "transfer.failed" || event === "transfer.reversed";
+        if (handledEvent && !reference) return new Response("Missing transaction reference", { status: 400 });
         const eventKey = `${event}:${payload.data?.id ?? reference ?? ""}`;
 
         const { supabaseAdmin: db } = await import("@/integrations/supabase/client.server");
@@ -50,7 +53,8 @@ export const Route = createFileRoute("/api/public/paystack-webhook")({
             // Verify against Paystack's API as well as the signed webhook.
             const verified = await verifyPayment(reference);
             if (!verified || verified.status !== "success" || verified.currency !== "NGN" ||
-                verified.reference !== reference || !payload.data?.amount ||
+                payload.data?.currency !== "NGN" || verified.reference !== reference ||
+                !Number.isSafeInteger(payload.data?.amount) || !payload.data.amount ||
                 verified.amount !== payload.data.amount) {
               console.error("[webhook] funding verification mismatch", reference);
               const { error: deleteError } = await db.from("paystack_events").delete().eq("event_key", eventKey);
