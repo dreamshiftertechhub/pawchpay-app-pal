@@ -121,10 +121,12 @@ export const Route = createFileRoute("/api/wallet/savings")({
             p_user_id: userId,
             p_goal_id: funding.goalId,
             p_amount: funding.amount,
+            p_reference: funding.reference,
           });
           if (error) {
             if (/insufficient/i.test(error.message)) throw new HttpError(400, "Insufficient wallet balance.");
-            if (/not found|goal/i.test(error.message)) throw new HttpError(404, "Savings goal not found.");
+            if (/reference already used/i.test(error.message)) throw new HttpError(409, "This savings reference has already been used.");
+            if (/not found|goal|inactive/i.test(error.message)) throw new HttpError(404, "Savings goal not found.");
             throw error;
           }
           return json({ ok: true }, 200, request);
