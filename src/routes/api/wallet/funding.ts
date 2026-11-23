@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { admin, corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
-import { initializePayment } from "@/lib/paystack.server";
+import { assertPaymentsEnabled, initializePayment } from "@/lib/paystack.server";
 
 const Body = z.object({
   amount: z.number().int().min(100).max(1_000_000),
@@ -13,6 +13,7 @@ export const Route = createFileRoute("/api/wallet/funding")({
       OPTIONS: async ({ request }) => corsPreflightResponse(request),
       POST: async ({ request }) => {
         try {
+          assertPaymentsEnabled();
           const userId = await requireUser(request);
           const parsed = Body.safeParse(await request.json().catch(() => null));
           if (!parsed.success) throw new HttpError(400, "Enter an amount between ₦100 and ₦1,000,000.");
