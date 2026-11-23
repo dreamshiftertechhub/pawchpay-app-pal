@@ -20,6 +20,7 @@ export const Route = createFileRoute("/api/wallet/resolve-account")({
       },
       POST: async ({ request }) => {
         try {
+          assertPaymentsEnabled();
           await requireUser(request);
           const parsed = Body.safeParse(await request.json().catch(() => null));
           if (!parsed.success) throw new HttpError(400, "Enter a 10-digit account number and choose a bank.");
