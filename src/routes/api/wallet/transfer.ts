@@ -69,6 +69,7 @@ export const Route = createFileRoute("/api/wallet/transfer")({
       },
       POST: async ({ request }) => {
         try {
+          assertPaymentsEnabled();
           const userId = await requireUser(request);
           const parsed = Body.safeParse(await request.json().catch(() => null));
           if (!parsed.success)
