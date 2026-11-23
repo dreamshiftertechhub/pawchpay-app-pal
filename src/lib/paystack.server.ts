@@ -4,6 +4,15 @@ const BASE = "https://api.paystack.co";
 
 export class PaystackRejected extends Error {}
 
+// Payments remain disabled unless explicitly enabled for a future, approved test.
+export function paymentsEnabled() {
+  return process.env["PAWCHPAY_PAYMENTS_ENABLED"] === "true";
+}
+
+export function assertPaymentsEnabled() {
+  if (!paymentsEnabled()) throw new HttpError(503, "Wallet funding and bank transfers are temporarily unavailable while PawchPay completes setup. Your wallet balance is not affected.");
+}
+
 async function call<T>(path: string, init?: RequestInit): Promise<{ ok: boolean; status: number; body: any; data: T }> {
   const secret = process.env["PAYSTACK_SECRET_KEY"];
   if (!secret) throw new HttpError(503, "Payments are not configured yet.");
