@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
-import { listBanks, resolveAccount } from "@/lib/paystack.server";
+import { assertPaymentsEnabled, listBanks, resolveAccount } from "@/lib/paystack.server";
 
 const Body = z.object({ accountNumber: z.string().regex(/^\d{10}$/), bankCode: z.string().regex(/^[0-9A-Za-z]{2,10}$/) });
 
@@ -11,6 +11,7 @@ export const Route = createFileRoute("/api/wallet/resolve-account")({
       OPTIONS: async ({ request }) => corsPreflightResponse(request),
       GET: async ({ request }) => {
         try {
+          assertPaymentsEnabled();
           await requireUser(request);
           return json({ banks: await listBanks() }, 200, request);
         } catch (e) {
