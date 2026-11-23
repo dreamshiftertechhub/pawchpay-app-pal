@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { verifySignature, verifyPayment } from "@/lib/paystack.server";
+import { paymentsEnabled, verifySignature, verifyPayment } from "@/lib/paystack.server";
 
 export const Route = createFileRoute("/api/public/paystack-webhook")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        if (!paymentsEnabled()) return new Response("PawchPay payments are temporarily disabled", { status: 503 });
         const raw = await request.text();
         if (!(await verifySignature(raw, request.headers.get("x-paystack-signature")))) {
           return new Response("Invalid signature", { status: 401 });
