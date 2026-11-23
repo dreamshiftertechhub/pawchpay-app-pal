@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { admin, corsPreflightResponse, errorResponse, HttpError, json, requireUser } from "@/lib/wallet-auth.server";
-import { createRecipient, initiateTransfer, PaystackRejected, resolveAccount, verifyTransfer } from "@/lib/paystack.server";
+import { assertPaymentsEnabled, createRecipient, initiateTransfer, PaystackRejected, resolveAccount, verifyTransfer } from "@/lib/paystack.server";
 
 const MIN = 100;
 const MAX = 1_000_000;
@@ -54,6 +54,7 @@ export const Route = createFileRoute("/api/wallet/transfer")({
       // Status check: reconciles a pending transfer with Paystack.
       GET: async ({ request }) => {
         try {
+          assertPaymentsEnabled();
           const userId = await requireUser(request);
           const reference = new URL(request.url).searchParams.get("reference") || "";
           if (!/^[a-z0-9-]{16,50}$/.test(reference)) throw new HttpError(400, "Invalid reference.");
