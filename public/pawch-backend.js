@@ -279,7 +279,7 @@ function pickRecipient(r) {
   pendingRef = null;
   const sub = `${r.accountNumber.slice(0, 3)}•••${r.accountNumber.slice(-4)} · ${r.bankName}`;
   window.selectContact(initials(r.name), r.name, sub);
-  setText("ticketFee", "Charged by Paystack");
+  setText("ticketFee", "Temporarily unavailable");
 }
 
 const origClear = window.clearRecipient;
@@ -476,7 +476,9 @@ window.authorizeTransfer = async function () {
     $("authorizeBtn").textContent = "Authorize & Send";
   }
 };
-window.doTransfer = window.authorizeTransfer;
+window.doTransfer = function () {
+  window.openResult(false, "Bank transfers paused", "Bank transfers are temporarily unavailable while PawchPay completes setup. No transfer was initiated and your wallet balance was not changed.");
+};
 
 // ----- transaction PIN: create / change (server-checked) -----
 let pinFlow = { step: null, current: "", first: "" };
@@ -535,6 +537,8 @@ window.pinNext = async function () {
 // ----- wallet funding: Paystack checkout; wallet credit only after verified webhook -----
 let fundingBusy = false;
 window.fundVia = async function (method) {
+  window.openResult(false, "Wallet funding paused", "Wallet funding is temporarily unavailable while PawchPay completes setup. Your wallet balance is not affected.");
+  return;
   if (fundingBusy) return;
   const amount = digits($("fundAmount")?.value);
   if (amount < 100 || amount > 1_000_000) {
